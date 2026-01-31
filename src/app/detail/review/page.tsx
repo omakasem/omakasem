@@ -64,6 +64,14 @@ function ReviewTestContent() {
     </div>
   )
 }
+function ReviewTestFallback() {
+  return (
+    <div className="flex h-screen items-center justify-center">
+      <div className="text-zinc-500">Loading...</div>
+    </div>
+  )
+}
+
 export default function ReviewTestPage() {
   return (
     <Suspense fallback={<ReviewTestFallback />}>
