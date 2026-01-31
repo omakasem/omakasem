@@ -1,5 +1,6 @@
 import { auth } from '@clerk/nextjs/server'
 import { ObjectId } from 'mongodb'
+import { generateWeeklySummary } from './ai'
 import { getDb } from './mongodb'
 import type {
   ActivityData,
@@ -279,10 +280,28 @@ export async function getCurriculumWithTasks(id: string): Promise<CurriculumWith
 
     const progress = doc.total_tasks > 0 ? Math.round((doc.completed_tasks / doc.total_tasks) * 100) : 0
 
+    let weeklySummary = doc.weekly_summary || ''
+    if (!weeklySummary) {
+      try {
+        weeklySummary = await generateWeeklySummary({
+          courseTitle: doc.course_title,
+          oneLiner: doc.one_liner,
+          progress,
+          totalTasks: doc.total_tasks,
+          completedTasks: doc.completed_tasks,
+          structure: doc.structure,
+        })
+        await curriculumCollection.updateOne(idQuery, { $set: { weekly_summary: weeklySummary } })
+      } catch (err) {
+        console.error('Failed to generate weekly summary:', err)
+        weeklySummary = '학습을 시작해보세요.'
+      }
+    }
+
     return {
       course_title: doc.course_title,
       one_liner: doc.one_liner,
-      weekly_summary: '', // TODO: implement weekly summary generation
+      weekly_summary: weeklySummary,
       progress,
       structure: doc.structure,
       tasks: tasks.map((task) => ({

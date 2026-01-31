@@ -40,8 +40,9 @@ export interface CurriculumDocument {
   total_tasks: number
   completed_tasks: number
   icon?: string
-  icon_id?: string // Key for curriculumIcons mapping (e.g., 'python', 'thread-api')
-  git_repo?: string // GitHub repository URL
+  icon_id?: string
+  git_repo?: string
+  weekly_summary?: string
   structure: {
     epics: {
       title: string
