@@ -1,5 +1,3 @@
-'use client'
-
 import clsx from 'clsx'
 
 import { levelConfig, type RatingLevel } from './ai-rating-badge'

@@ -11,6 +11,35 @@ import type {
 } from './types'
 
 /**
+ * Combined curriculum with tasks for dashboard display
+ */
+export interface CurriculumWithTasks {
+  course_title: string
+  one_liner: string
+  weekly_summary: string
+  progress: number
+  structure: {
+    epics: {
+      title: string
+      description: string
+      stories: { title: string; description: string }[]
+    }[]
+  }
+  tasks: {
+    task_id: string
+    title: string
+    status: 'pending' | 'partial' | 'passed' | 'failed'
+    epic_index: number
+    story_index: number
+    grade_result?: {
+      grade?: string
+      percentage?: number
+      graded_at?: string
+    } | null
+  }[]
+}
+
+/**
  * Helper to build a flexible ID query that works with both ObjectId and string IDs
  */
 function buildIdQuery(id: string): { _id: ObjectId } | { _id: string } {
@@ -40,11 +69,7 @@ export async function getCurricula(): Promise<CurriculumListItem[]> {
     // Query: user's curricula OR curricula without user assignment (legacy data)
     const curricula = await collection
       .find({
-        $or: [
-          { clerk_user_id: userId },
-          { clerk_user_id: { $exists: false } },
-          { clerk_user_id: null },
-        ],
+        $or: [{ clerk_user_id: userId }, { clerk_user_id: { $exists: false } }, { clerk_user_id: null }],
       })
       .sort({ updated_at: -1 })
       .toArray()
@@ -79,11 +104,7 @@ export async function getCurriculumById(id: string): Promise<CurriculumDetail | 
     const idQuery = buildIdQuery(id)
     const doc = await collection.findOne({
       ...idQuery,
-      $or: [
-        { clerk_user_id: userId },
-        { clerk_user_id: { $exists: false } },
-        { clerk_user_id: null },
-      ],
+      $or: [{ clerk_user_id: userId }, { clerk_user_id: { $exists: false } }, { clerk_user_id: null }],
     })
 
     if (!doc) {
@@ -166,10 +187,7 @@ export async function getActivityData(days: number = 154): Promise<ActivityData[
 
     const activities = await collection
       .find({
-        $or: [
-          { clerk_user_id: userId },
-          { clerk_user_id: { $exists: false } },
-        ],
+        $or: [{ clerk_user_id: userId }, { clerk_user_id: { $exists: false } }],
         date: { $gte: startDateStr },
       })
       .sort({ date: 1 })
@@ -212,4 +230,74 @@ function generateEmptyActivityData(days: number): ActivityData[] {
     })
   }
   return response
+}
+
+export async function getCurriculumWithTasks(id: string): Promise<CurriculumWithTasks | null> {
+  const { userId } = await auth()
+
+  if (!userId) {
+    return null
+  }
+
+  try {
+    const db = await getDb()
+    const curriculumCollection = db.collection<CurriculumDocument>('curricula')
+    const taskCollection = db.collection<TaskDocument>('tasks')
+
+    const idQuery = buildIdQuery(id)
+    const doc = await curriculumCollection.findOne({
+      ...idQuery,
+      $or: [{ clerk_user_id: userId }, { clerk_user_id: { $exists: false } }, { clerk_user_id: null }],
+    })
+
+    if (!doc) {
+      return null
+    }
+
+    let tasks: TaskDocument[] = []
+    try {
+      if (ObjectId.isValid(id)) {
+        tasks = await taskCollection
+          .find({ curriculum_id: new ObjectId(id) as unknown as ObjectId })
+          .sort({ epic_index: 1, story_index: 1 })
+          .toArray()
+      }
+    } catch {
+      // Not a valid ObjectId, ignore
+    }
+
+    if (tasks.length === 0) {
+      tasks = await taskCollection
+        .find({ curriculum_id: id as unknown as ObjectId })
+        .sort({ epic_index: 1, story_index: 1 })
+        .toArray()
+    }
+
+    const progress = doc.total_tasks > 0 ? Math.round((doc.completed_tasks / doc.total_tasks) * 100) : 0
+
+    return {
+      course_title: doc.course_title,
+      one_liner: doc.one_liner,
+      weekly_summary: '', // TODO: implement weekly summary generation
+      progress,
+      structure: doc.structure,
+      tasks: tasks.map((task) => ({
+        task_id: task._id.toString(),
+        title: task.title,
+        status: task.status,
+        epic_index: task.epic_index,
+        story_index: task.story_index,
+        grade_result: task.grade_result
+          ? {
+              grade: task.grade_result.grade,
+              percentage: task.grade_result.percentage,
+              graded_at: task.grade_result.graded_at,
+            }
+          : undefined,
+      })),
+    }
+  } catch (error) {
+    console.error('Error fetching curriculum with tasks:', error)
+    return null
+  }
 }

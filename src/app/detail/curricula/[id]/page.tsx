@@ -1,8 +1,8 @@
 import { Badge } from '@/components/badge'
 import { Heading, Subheading } from '@/components/heading'
 import type { Metadata } from 'next'
-import { notFound } from 'next/navigation'
 import { headers } from 'next/headers'
+import { notFound } from 'next/navigation'
 
 interface Task {
   task_id: string
@@ -60,7 +60,7 @@ async function getCurriculum(id: string): Promise<CurriculumResponse | null> {
 
   try {
     const response = await fetch(`${protocol}://${host}/api/curricula/${id}`, {
-      cache: 'no-store',
+      next: { revalidate: 60, tags: [`curriculum-${id}`] },
     })
 
     if (!response.ok) {
@@ -155,9 +155,7 @@ export default async function CurriculumDetailPage({ params }: { params: Promise
           </div>
           <div className="rounded-lg bg-zinc-50 p-4 dark:bg-zinc-900">
             <div className="text-sm text-zinc-500 dark:text-zinc-400">전체 과제</div>
-            <div className="mt-1 text-2xl font-semibold text-zinc-900 dark:text-white">
-              {curriculum.total_tasks}개
-            </div>
+            <div className="mt-1 text-2xl font-semibold text-zinc-900 dark:text-white">{curriculum.total_tasks}개</div>
           </div>
           <div className="rounded-lg bg-zinc-50 p-4 dark:bg-zinc-900">
             <div className="text-sm text-zinc-500 dark:text-zinc-400">완료 과제</div>
@@ -184,10 +182,7 @@ export default async function CurriculumDetailPage({ params }: { params: Promise
               </Subheading>
               <div className="space-y-3">
                 {epic.tasks.map((task) => (
-                  <div
-                    key={task.task_id}
-                    className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-800"
-                  >
+                  <div key={task.task_id} className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-800">
                     <div className="flex items-start justify-between">
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">

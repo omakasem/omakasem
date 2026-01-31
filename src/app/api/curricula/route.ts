@@ -6,7 +6,23 @@ export async function GET() {
     const db = await getDb()
     const collection = db.collection<CurriculumDocument>('curricula')
 
-    const curricula = await collection.find({}).sort({ updated_at: -1 }).toArray()
+    const curricula = await collection
+      .find(
+        {},
+        {
+          projection: {
+            _id: 1,
+            course_title: 1,
+            icon: 1,
+            total_tasks: 1,
+            completed_tasks: 1,
+            status: 1,
+            updated_at: 1,
+          },
+        }
+      )
+      .sort({ updated_at: -1 })
+      .toArray()
 
     const response: CurriculumListItem[] = curricula.map((doc) => ({
       id: doc._id.toString(),
