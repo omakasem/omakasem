@@ -209,7 +209,7 @@ export function FeedbackLayout({ taskTitle, repoUrl, branch = 'main', suggestion
             className="flex flex-row items-center justify-center gap-1.5 rounded-full bg-[#161616] px-3 py-3 dark:bg-[#F5F5F5]"
           >
             <Image src="/icons/close.svg" alt="" width={20} height={20} className="invert dark:invert-0" />
-            <span className="font-pretendard text-sm leading-[1.45] font-medium tracking-[-0.02em] text-[#F5F5F5] dark:text-[#161616]">
+            <span className="font-pretendard text-sm leading-[1.45] font-medium tracking-[-0.02em] whitespace-nowrap text-[#F5F5F5] dark:text-[#161616]">
               피드백 종료
             </span>
           </button>
