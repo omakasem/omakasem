@@ -258,32 +258,38 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   try {
     const db = await getDb()
     const idQuery = buildIdQuery(id)
-    const curriculumDoc = await db.collection<CurriculumDocument>('curricula').findOne(idQuery)
+
+    const results = await db
+      .collection<CurriculumDocument>('curricula')
+      .aggregate<CurriculumDocument & { tasks: Task[] }>([
+        { $match: idQuery },
+        {
+          $lookup: {
+            from: 'tasks',
+            let: { currId: '$_id', currIdStr: { $toString: '$_id' } },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $or: [{ $eq: ['$curriculum_id', '$$currId'] }, { $eq: ['$curriculum_id', '$$currIdStr'] }],
+                  },
+                },
+              },
+              { $sort: { epic_index: 1, story_index: 1 } },
+            ],
+            as: 'tasks',
+          },
+        },
+      ])
+      .toArray()
+
+    const curriculumDoc = results[0]
 
     if (!curriculumDoc) {
       return Response.json({ error: 'Curriculum not found' }, { status: 404 })
     }
 
-    let tasks: Task[] = []
-    const curriculumIdStr = curriculumDoc._id.toString()
-
-    try {
-      if (ObjectId.isValid(curriculumIdStr)) {
-        tasks = await db
-          .collection<Task>('tasks')
-          .find({ curriculum_id: new ObjectId(curriculumIdStr) })
-          .sort({ epic_index: 1, story_index: 1 })
-          .toArray()
-      }
-    } catch {}
-
-    if (tasks.length === 0) {
-      tasks = await db
-        .collection<Task>('tasks')
-        .find({ curriculum_id: curriculumIdStr })
-        .sort({ epic_index: 1, story_index: 1 })
-        .toArray()
-    }
+    const tasks: Task[] = curriculumDoc.tasks || []
 
     const weeklySummary = await generateAIWeeklySummary(curriculumDoc, tasks)
 
