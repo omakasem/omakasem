@@ -10,6 +10,22 @@ import type {
   TaskDocument,
 } from './types'
 
+/**
+ * Helper to build a flexible ID query that works with both ObjectId and string IDs
+ */
+function buildIdQuery(id: string): { _id: ObjectId } | { _id: string } {
+  try {
+    // If it's a valid ObjectId format, query as ObjectId
+    if (ObjectId.isValid(id) && new ObjectId(id).toString() === id) {
+      return { _id: new ObjectId(id) }
+    }
+  } catch {
+    // Not a valid ObjectId
+  }
+  // Otherwise query as string
+  return { _id: id as unknown as ObjectId }
+}
+
 export async function getCurricula(): Promise<CurriculumListItem[]> {
   const { userId } = await auth()
 
@@ -21,15 +37,27 @@ export async function getCurricula(): Promise<CurriculumListItem[]> {
     const db = await getDb()
     const collection = db.collection<CurriculumDocument>('curricula')
 
-    const curricula = await collection.find({ clerk_user_id: userId }).sort({ updated_at: -1 }).toArray()
+    // Query: user's curricula OR curricula without user assignment (legacy data)
+    const curricula = await collection
+      .find({
+        $or: [
+          { clerk_user_id: userId },
+          { clerk_user_id: { $exists: false } },
+          { clerk_user_id: null },
+        ],
+      })
+      .sort({ updated_at: -1 })
+      .toArray()
 
-    return curricula.map((doc) => ({
-      id: doc._id.toString(),
-      title: doc.course_title,
-      icon: doc.icon,
-      progress: doc.total_tasks > 0 ? Math.round((doc.completed_tasks / doc.total_tasks) * 100) : 0,
-      status: doc.status,
-    }))
+    return curricula
+      .filter((doc) => doc.course_title) // Filter out empty titles
+      .map((doc) => ({
+        id: doc._id.toString(),
+        title: doc.course_title,
+        icon: doc.icon,
+        progress: doc.total_tasks > 0 ? Math.round((doc.completed_tasks / doc.total_tasks) * 100) : 0,
+        status: doc.status,
+      }))
   } catch (error) {
     console.error('Error fetching curricula:', error)
     return []
@@ -47,16 +75,15 @@ export async function getCurriculumById(id: string): Promise<CurriculumDetail | 
     const db = await getDb()
     const collection = db.collection<CurriculumDocument>('curricula')
 
-    let objectId: ObjectId
-    try {
-      objectId = new ObjectId(id)
-    } catch {
-      return null
-    }
-
+    // Try to find by either ObjectId or string ID
+    const idQuery = buildIdQuery(id)
     const doc = await collection.findOne({
-      _id: objectId,
-      clerk_user_id: userId,
+      ...idQuery,
+      $or: [
+        { clerk_user_id: userId },
+        { clerk_user_id: { $exists: false } },
+        { clerk_user_id: null },
+      ],
     })
 
     if (!doc) {
@@ -92,14 +119,28 @@ export async function getCurriculumTasks(curriculumId: string): Promise<TaskDocu
     const db = await getDb()
     const collection = db.collection<TaskDocument>('tasks')
 
-    let objectId: ObjectId
+    // Query with both ObjectId and string curriculum_id
+    let tasks: TaskDocument[] = []
+
+    // Try ObjectId first
     try {
-      objectId = new ObjectId(curriculumId)
+      if (ObjectId.isValid(curriculumId)) {
+        tasks = await collection
+          .find({ curriculum_id: new ObjectId(curriculumId) as unknown as ObjectId })
+          .sort({ epic_index: 1, story_index: 1 })
+          .toArray()
+      }
     } catch {
-      return []
+      // Not a valid ObjectId, ignore
     }
 
-    const tasks = await collection.find({ curriculum_id: objectId }).sort({ epic_index: 1, story_index: 1 }).toArray()
+    // If no results, try string
+    if (tasks.length === 0) {
+      tasks = await collection
+        .find({ curriculum_id: curriculumId as unknown as ObjectId })
+        .sort({ epic_index: 1, story_index: 1 })
+        .toArray()
+    }
 
     return tasks
   } catch (error) {
@@ -125,7 +166,11 @@ export async function getActivityData(days: number = 154): Promise<ActivityData[
 
     const activities = await collection
       .find({
-        clerk_user_id: userId,
+        $or: [
+          { clerk_user_id: userId },
+          { clerk_user_id: { $exists: false } },
+          { clerk_user_id: null },
+        ],
         date: { $gte: startDateStr },
       })
       .sort({ date: 1 })

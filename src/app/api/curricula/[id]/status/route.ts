@@ -1,8 +1,7 @@
-import { getDb } from '@/lib/mongodb'
-import type { CurriculumDocument } from '@/lib/types'
 import { auth } from '@clerk/nextjs/server'
-import { ObjectId } from 'mongodb'
 import { NextRequest } from 'next/server'
+
+const PLANNER_URL = process.env.OMAKASEM_PLANNER_URL || 'https://planner.omakasem.com'
 
 export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -13,28 +12,23 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
   }
 
   try {
-    let objectId: ObjectId
-    try {
-      objectId = new ObjectId(id)
-    } catch {
-      return Response.json({ error: 'Invalid curriculum ID' }, { status: 400 })
-    }
-
-    const db = await getDb()
-    const collection = db.collection<CurriculumDocument>('curricula')
-
-    const curriculum = await collection.findOne({
-      _id: objectId,
-      clerk_user_id: userId,
+    const response = await fetch(`${PLANNER_URL}/v1/curricula/${id}`, {
+      headers: { 'Content-Type': 'application/json' },
+      cache: 'no-store',
     })
 
-    if (!curriculum) {
-      return Response.json({ error: 'Curriculum not found' }, { status: 404 })
+    if (!response.ok) {
+      if (response.status === 404) {
+        return Response.json({ error: 'Curriculum not found' }, { status: 404 })
+      }
+      return Response.json({ error: 'Failed to fetch curriculum status' }, { status: response.status })
     }
 
+    const curriculum = await response.json()
+
     return Response.json({
-      id: curriculum._id.toString(),
-      status: curriculum.status,
+      id: curriculum.curriculum_id,
+      status: curriculum.status === 'approved' ? 'active' : curriculum.status,
       title: curriculum.course_title,
     })
   } catch (error) {

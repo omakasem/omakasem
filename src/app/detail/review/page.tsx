@@ -1,13 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { Heading } from '@/components/heading'
 import { Button } from '@/components/button'
 import { Input } from '@/components/input'
 import { FeedbackPanel } from '@/components/feedback'
 
-export default function ReviewTestPage() {
+function ReviewContent() {
   const searchParams = useSearchParams()
   const initialRepo = searchParams.get('repo') || 'https://github.com/junhoyeo/threads-api'
 
@@ -64,5 +64,13 @@ export default function ReviewTestPage() {
         {submitted && <FeedbackPanel repoUrl={repoUrl} branch={branch} />}
       </div>
     </div>
+  )
+}
+
+export default function ReviewTestPage() {
+  return (
+    <Suspense fallback={<div className="flex h-64 items-center justify-center text-zinc-500">로딩 중...</div>}>
+      <ReviewContent />
+    </Suspense>
   )
 }

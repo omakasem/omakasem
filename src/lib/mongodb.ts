@@ -1,5 +1,7 @@
 import { Db, MongoClient } from 'mongodb'
 
+const DB_NAME = 'omakasem'
+
 interface MongoClientCache {
   client: MongoClient | null
   promise: Promise<MongoClient> | null
@@ -21,7 +23,7 @@ if (!global._mongoClientPromise) {
 
 export async function connectToDatabase(): Promise<{ client: MongoClient; db: Db }> {
   if (cached.client) {
-    return { client: cached.client, db: cached.client.db() }
+    return { client: cached.client, db: cached.client.db(DB_NAME) }
   }
 
   const MONGODB_URI = process.env.MONGODB_URI
@@ -39,7 +41,7 @@ export async function connectToDatabase(): Promise<{ client: MongoClient; db: Db
   }
 
   const client = await cached.promise
-  return { client, db: client.db() }
+  return { client, db: client.db(DB_NAME) }
 }
 
 export async function getDb(): Promise<Db> {

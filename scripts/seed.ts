@@ -433,16 +433,19 @@ function generateActivityData(clerkUserId: string, curriculumIds: ObjectId[]): {
 // MAIN SEED FUNCTION
 // ============================================================================
 
+const DB_NAME = 'omakasem'
+
 async function seed() {
   console.log('🌱 Starting database seed...')
   console.log(`   User ID: ${clerkUserId}`)
+  console.log(`   Database: ${DB_NAME}`)
   console.log('')
 
   const client = new MongoClient(MONGODB_URI!)
   await client.connect()
   console.log('✅ Connected to MongoDB')
 
-  const db = client.db()
+  const db = client.db(DB_NAME)
 
   try {
     // Clear existing data for this user

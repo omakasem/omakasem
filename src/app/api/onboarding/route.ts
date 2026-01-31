@@ -1,7 +1,7 @@
-import { getDb } from '@/lib/mongodb'
-import type { CurriculumDocument } from '@/lib/types'
 import { auth } from '@clerk/nextjs/server'
 import { z } from 'zod'
+
+const PLANNER_URL = process.env.OMAKASEM_PLANNER_URL || 'https://planner.omakasem.com'
 
 const onboardingSchema = z.object({
   title: z.string().min(1, '주제 제목을 입력해주세요'),
@@ -24,47 +24,64 @@ export async function POST(request: Request) {
     // Parse weeks and hours from strings (e.g., "15주" -> 15, "32시간" -> 32)
     const weeksMatch = validatedData.totalWeeks.match(/\d+/)
     const hoursMatch = validatedData.weeklyHours.match(/\d+/)
-    
+
     const totalWeeks = weeksMatch ? parseInt(weeksMatch[0], 10) : 12
     const weeklyHours = hoursMatch ? parseInt(hoursMatch[0], 10) : 10
-    const totalHours = totalWeeks * weeklyHours
 
-    const db = await getDb()
-    const collection = db.collection<CurriculumDocument>('curricula')
+    const sessionResponse = await fetch(`${PLANNER_URL}/v1/sessions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        title: validatedData.title,
+        description: validatedData.description,
+        total_weeks: totalWeeks,
+        hours_per_week: weeklyHours,
+      }),
+    })
 
-    const now = new Date()
-    const sessionId = `onboarding_${userId}_${Date.now()}`
-
-    const curriculum: Omit<CurriculumDocument, '_id'> = {
-      session_id: sessionId,
-      course_title: validatedData.title,
-      one_liner: validatedData.description,
-      student_id: null,
-      clerk_user_id: userId,
-      status: 'generating',
-      total_hours: totalHours,
-      total_tasks: 0,
-      completed_tasks: 0,
-      structure: {
-        epics: [],
-      },
-      created_at: now,
-      updated_at: now,
+    if (!sessionResponse.ok) {
+      const errorText = await sessionResponse.text()
+      console.error('Planner session creation failed:', errorText)
+      return Response.json({ error: '커리큘럼 생성에 실패했습니다' }, { status: 500 })
     }
 
-    const result = await collection.insertOne(curriculum as CurriculumDocument)
+    const sessionData = await sessionResponse.json()
+    const sessionId = sessionData.session_id
+
+    const approveResponse = await fetch(`${PLANNER_URL}/v1/sessions/${sessionId}/respond`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'approve' }),
+    })
+
+    if (!approveResponse.ok) {
+      const errorText = await approveResponse.text()
+      console.error('Draft approval failed:', errorText)
+      return Response.json({ error: '커리큘럼 승인에 실패했습니다' }, { status: 500 })
+    }
+
+    const saveResponse = await fetch(`${PLANNER_URL}/v1/curricula`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ session_id: sessionId }),
+    })
+
+    if (!saveResponse.ok) {
+      const errorText = await saveResponse.text()
+      console.error('Curriculum save failed:', errorText)
+      return Response.json({ error: '커리큘럼 저장에 실패했습니다' }, { status: 500 })
+    }
+
+    const curriculumData = await saveResponse.json()
 
     return Response.json({
       success: true,
-      curriculumId: result.insertedId.toString(),
-      message: '커리큘럼 생성이 시작되었습니다',
+      curriculumId: curriculumData.curriculum_id,
+      message: '커리큘럼이 생성되었습니다',
     })
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return Response.json(
-        { error: 'Validation failed', details: error.issues },
-        { status: 400 }
-      )
+      return Response.json({ error: 'Validation failed', details: error.issues }, { status: 400 })
     }
 
     console.error('Error creating curriculum:', error)

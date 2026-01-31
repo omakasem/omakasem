@@ -1,8 +1,11 @@
 import { ObjectId } from 'mongodb'
 
+// IDs can be either ObjectId (new data) or string (planner service data)
+type DocumentId = ObjectId | string
+
 export interface TaskDocument {
-  _id: ObjectId
-  curriculum_id: ObjectId
+  _id: DocumentId
+  curriculum_id: DocumentId
   epic_index: number
   story_index: number
   epic_title: string
@@ -26,7 +29,7 @@ export interface TaskDocument {
 }
 
 export interface CurriculumDocument {
-  _id: ObjectId
+  _id: DocumentId
   session_id: string
   course_title: string
   one_liner: string
