@@ -1,10 +1,14 @@
 'use client'
 
 import { ProgressSteps } from '@/components/progress-steps'
-import { ArrowRight, Flag } from 'lucide-react'
+import { ArrowRight, Flag, Loader2 } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 
 export default function OnboardingPage() {
+  const router = useRouter()
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -12,9 +16,29 @@ export default function OnboardingPage() {
     weeklyHours: '',
   })
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    console.log('Form data:', formData)
+    setIsSubmitting(true)
+    setError(null)
+
+    try {
+      const response = await fetch('/api/onboarding', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || '커리큘럼 생성에 실패했습니다')
+      }
+
+      router.push(`/onboarding/loading?id=${data.curriculumId}`)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '알 수 없는 오류가 발생했습니다')
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -88,12 +112,28 @@ export default function OnboardingPage() {
           </div>
         </div>
 
+        {error && (
+          <div className="rounded-xl bg-red-100 px-4 py-3 text-sm text-red-700 dark:bg-red-900/30 dark:text-red-400">
+            {error}
+          </div>
+        )}
+
         <button
           type="submit"
-          className="flex h-14 w-full items-center justify-center gap-2 rounded-full bg-zinc-900 font-medium text-white transition-colors hover:bg-zinc-800 dark:bg-white dark:text-black dark:hover:bg-zinc-200"
+          disabled={isSubmitting}
+          className="flex h-14 w-full items-center justify-center gap-2 rounded-full bg-zinc-900 font-medium text-white transition-colors hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-white dark:text-black dark:hover:bg-zinc-200"
         >
-          여정 설계
-          <ArrowRight className="h-4 w-4" />
+          {isSubmitting ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              여정 설계 중...
+            </>
+          ) : (
+            <>
+              여정 설계
+              <ArrowRight className="h-4 w-4" />
+            </>
+          )}
         </button>
       </form>
     </div>

@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "seed": "bun run scripts/seed.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.72.1",
