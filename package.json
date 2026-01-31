@@ -1,5 +1,5 @@
 {
-  "name": "catalyst-demo",
+  "name": "omakasem",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -14,7 +14,6 @@
     "@headlessui/react": "^2.2.6",
     "@heroicons/react": "^2.2.0",
     "clsx": "^2.1.1",
-    "convex": "^1.31.7",
     "motion": "^12.23.11",
     "next": "^15",
     "react": "^19",

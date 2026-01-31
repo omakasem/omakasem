@@ -8,7 +8,7 @@
 
 AI-Powered Personalized Developer Education Platform
 
-COMMIT AND PUSH OFTEN
+COMMIT AND PUSH OFTEN. MUST MATCH mockups folder's design
 
 **Stack**: Next.js 15, React 19, Convex, Clerk (GitHub OAuth only), Tailwind CSS  
 **AI Services**: omakasem-planner, omakasem-code-reviewer  
