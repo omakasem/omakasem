@@ -48,7 +48,7 @@ function FeedbackCard({
     >
       <div className="flex flex-1 flex-col gap-2 self-stretch rounded-[10px] bg-[rgba(164,164,164,0.1)] p-3 dark:bg-[rgba(245,245,245,0.04)]">
         <div className="flex flex-row items-center gap-1 self-stretch p-1">
-          <Image src={config.icon} alt="" width={16} height={16} className="opacity-[0.56] dark:invert" />
+          <Image src={config.icon} alt="" width={14} height={14} className="opacity-[0.56] invert dark:invert-0" />
           <span className="font-pretendard text-xs leading-[1.35] font-normal tracking-[-0.02em] text-[rgba(22,22,22,0.56)] dark:text-[rgba(245,245,245,0.56)]">
             {config.label}
           </span>
@@ -109,7 +109,7 @@ function FeedbackSection({
 }
 
 export function FeedbackLayout({ taskTitle, repoUrl, branch = 'main', suggestions, onClose }: FeedbackLayoutProps) {
-  const [selectedIndex, setSelectedIndex] = useState<number | null>(null)
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(suggestions.length > 0 ? 0 : null)
 
   const highPriority = suggestions.filter((s) => s.priority === 'high')
   const mediumPriority = suggestions.filter((s) => s.priority === 'medium')
@@ -149,16 +149,22 @@ export function FeedbackLayout({ taskTitle, repoUrl, branch = 'main', suggestion
               {taskTitle}
             </span>
           </div>
-          <Image src="/icons/arrow-forward.svg" alt="" width={16} height={16} className="opacity-72 dark:invert" />
+          <Image
+            src="/icons/arrow-forward.svg"
+            alt=""
+            width={16}
+            height={16}
+            className="opacity-[0.72] invert dark:invert-0"
+          />
           <div className="flex flex-row items-center gap-2">
-            <Image src="/icons/wand-shine.svg" alt="" width={24} height={24} />
+            <Image src="/icons/wand-shine.svg" alt="" width={24} height={24} className="invert dark:invert-0" />
             <span className="font-pretendard text-base leading-[1.5] font-medium tracking-[-0.02em] text-[#161616] dark:text-[#F5F5F5]">
               채점 후 피드백
             </span>
           </div>
         </div>
 
-        <div className="flex flex-1 flex-col gap-10 overflow-y-auto px-5 pt-2 pb-24">
+        <div className="flex flex-1 flex-col gap-10 overflow-y-auto px-5 pt-2 pb-24 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {highPriority.length > 0 && (
             <FeedbackSection
               title="우선순위 높은 피드백"
