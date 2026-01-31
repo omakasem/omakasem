@@ -26,7 +26,7 @@ export function ProgressBar({ progress, className }: ProgressBarProps) {
   return (
     <div className={clsx('h-1.5 w-full overflow-hidden rounded-full bg-zinc-700', className)}>
       <div
-        className="h-full rounded-full bg-emerald-500 transition-all duration-300"
+        className="h-full rounded-full bg-blue-500 transition-all duration-300"
         style={{ width: `${Math.min(100, Math.max(0, progress))}%` }}
       />
     </div>

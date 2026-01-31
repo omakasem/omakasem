@@ -20,8 +20,8 @@ const levelConfig: Record<RatingLevel, { label: string; color: string; bgColor: 
   },
   middle: {
     label: '미들',
-    color: 'text-cyan-400',
-    bgColor: 'bg-cyan-500/10',
+    color: 'text-blue-400',
+    bgColor: 'bg-blue-500/10',
   },
   advanced: {
     label: '어드밴스드',
@@ -30,8 +30,8 @@ const levelConfig: Record<RatingLevel, { label: string; color: string; bgColor: 
   },
   expert: {
     label: '엑스퍼트',
-    color: 'text-emerald-400',
-    bgColor: 'bg-emerald-500/10',
+    color: 'text-blue-400',
+    bgColor: 'bg-blue-500/10',
   },
 }
 
