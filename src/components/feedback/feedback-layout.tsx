@@ -207,7 +207,7 @@ export function FeedbackLayout({
               selectedIndex={selectedIndex}
               startIndex={0}
               onSelect={setSelectedIndex}
-              highlightFirst={true}
+              highlightFirst={selectedIndex === null}
             />
           )}
 
