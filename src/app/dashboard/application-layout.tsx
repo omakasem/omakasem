@@ -28,6 +28,7 @@ import { HugeiconsIcon } from '@hugeicons/react'
 import clsx from 'clsx'
 import Image from 'next/image'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import { useMemo, useState } from 'react'
 
 const curriculumIcons: Record<string, string> = {
@@ -74,13 +75,18 @@ function AccountDropdownMenu({ anchor, onSignOut }: { anchor: 'top start' | 'bot
 
 interface ApplicationLayoutProps {
   curricula: CurriculumListItem[]
+  selectedCurriculumId?: string | null
   children: React.ReactNode
 }
 
-export function ApplicationLayout({ curricula, children }: ApplicationLayoutProps) {
+export function ApplicationLayout({ curricula, selectedCurriculumId, children }: ApplicationLayoutProps) {
   const { user } = useUser()
   const { signOut } = useClerk()
+  const searchParams = useSearchParams()
   const [searchQuery, setSearchQuery] = useState('')
+
+  const urlCurriculumId = searchParams.get('curriculum') || searchParams.get('curriculumId')
+  const activeCurriculumId = selectedCurriculumId ?? urlCurriculumId ?? curricula[0]?.id
 
   const handleSignOut = () => {
     signOut({ redirectUrl: '/sign-in' })
@@ -158,10 +164,10 @@ export function ApplicationLayout({ curricula, children }: ApplicationLayoutProp
                 {filteredCurricula.length === 0 ? (
                   <div className="px-3 py-4 text-center text-sm text-zinc-500">검색 결과가 없습니다</div>
                 ) : (
-                  filteredCurricula.map((curriculum, index) => {
+                  filteredCurricula.map((curriculum) => {
                     const iconKey = curriculum.icon_id || curriculum.icon
                     const iconPath = iconKey ? curriculumIcons[iconKey] : null
-                    const isSelected = index === 0 && !searchQuery
+                    const isSelected = !searchQuery && curriculum.id === activeCurriculumId
                     const badgeStyle = getProgressBadgeStyle(curriculum.progress)
 
                     return (
