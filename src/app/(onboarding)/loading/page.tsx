@@ -5,11 +5,12 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import { ProgressSteps } from '@/components/progress-steps'
 import { StreamingContent } from '@/components/streaming-content'
 import { DraftPreview } from '@/components/draft-preview'
+import { EnrichmentStreaming } from '@/components/enrichment-streaming'
 import { Flag, Loader2, CheckCircle, XCircle, AlertCircle } from 'lucide-react'
 import type { CoursePlan, CourseInput } from '@/types/planner'
-import { submitReview } from './actions'
+import { submitReview, getSessionInfo, saveCurriculumFromPlan } from './actions'
 
-type PageState = 'loading' | 'streaming' | 'ready' | 'submitting' | 'error'
+type PageState = 'loading' | 'streaming' | 'ready' | 'submitting' | 'enriching' | 'enrichment_complete' | 'error'
 
 export default function LoadingPage() {
   const searchParams = useSearchParams()
@@ -19,6 +20,7 @@ export default function LoadingPage() {
   const [pageState, setPageState] = useState<PageState>('loading')
   const [input, setInput] = useState<CourseInput | null>(null)
   const [draft, setDraft] = useState<CoursePlan | null>(null)
+  const [plannerSessionId, setPlannerSessionId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   // Fetch session input on mount
@@ -60,15 +62,31 @@ export default function LoadingPage() {
     if (!sessionId) return
 
     setPageState('submitting')
-    const result = await submitReview(sessionId, 'approve')
 
+    // Get plannerSessionId first
+    const sessionInfo = await getSessionInfo(sessionId)
+    if (sessionInfo.error || !sessionInfo.plannerSessionId) {
+      setError(sessionInfo.error || 'Planner 세션 정보를 가져오는데 실패했습니다')
+      setPageState('error')
+      return
+    }
+
+    setPlannerSessionId(sessionInfo.plannerSessionId)
+    setPageState('enriching')
+  }
+
+  const handleEnrichmentComplete = useCallback(async (plan: unknown) => {
+    if (!sessionId) return
+
+    const result = await saveCurriculumFromPlan(sessionId, plan as CoursePlan)
     if (result.error) {
       setError(result.error)
       setPageState('error')
-    } else if (result.success) {
-      router.push('/')
+    } else if (result.curriculumId) {
+      // 임시: 확인 페이지로 이동 (나중에 대시보드로 변경)
+      router.push(`/complete?curriculumId=${result.curriculumId}`)
     }
-  }
+  }, [sessionId, router])
 
   const handleReject = async () => {
     if (!sessionId) return
@@ -97,7 +115,7 @@ export default function LoadingPage() {
 
   return (
     <div className="space-y-8">
-      <ProgressSteps currentStep={pageState === 'ready' ? 3 : 2} />
+      <ProgressSteps currentStep={pageState === 'enriching' ? 4 : pageState === 'ready' ? 3 : 2} />
 
       <Flag className="h-8 w-8 text-zinc-900 dark:text-white" strokeWidth={1.5} />
 
@@ -160,6 +178,22 @@ export default function LoadingPage() {
           <Loader2 className="h-8 w-8 animate-spin text-zinc-500" />
           <p className="text-sm text-zinc-500">처리 중...</p>
         </div>
+      )}
+
+      {pageState === 'enriching' && plannerSessionId && (
+        <>
+          <div className="space-y-2">
+            <h1 className="text-2xl font-bold text-zinc-900 dark:text-white">상세 커리큘럼 생성 중...</h1>
+            <p className="text-sm text-zinc-600 dark:text-zinc-400">
+              승인된 빌더 여정을 기반으로 상세 학습 과제를 생성합니다.
+            </p>
+          </div>
+          <EnrichmentStreaming
+            plannerSessionId={plannerSessionId}
+            onComplete={handleEnrichmentComplete}
+            onError={handleError}
+          />
+        </>
       )}
 
       {pageState === 'error' && (

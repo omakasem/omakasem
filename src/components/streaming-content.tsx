@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react'
 import type { CourseInput, CoursePlan, Epic } from '@/types/planner'
-import { BookOpen } from 'lucide-react'
+import { ChevronDown } from 'lucide-react'
 
 // Transform snake_case API response to camelCase
 function transformDraft(raw: Record<string, unknown>): CoursePlan {
@@ -30,27 +30,105 @@ function transformEpic(epic: Record<string, unknown>, epicIndex: number): Epic {
   }
 }
 
+interface PartialStory {
+  title: string
+  description: string
+  estimatedHours?: number
+  objectives: string[]
+  isComplete: boolean
+}
+
 interface PartialEpic {
   weekNumber: number
   title: string
   description: string
-  storyCount: number
+  stories: PartialStory[]
   isComplete: boolean
+}
+
+// Extract partial stories from epic content
+function extractPartialStories(epicContent: string): PartialStory[] {
+  const stories: PartialStory[] = []
+
+  const storiesMatch = epicContent.match(/"stories"\s*:\s*\[/)
+  if (!storiesMatch || storiesMatch.index === undefined) return stories
+
+  const storiesStart = storiesMatch.index + storiesMatch[0].length
+  const storiesContent = epicContent.substring(storiesStart)
+
+  let depth = 0
+  let storyStart = -1
+
+  for (let i = 0; i < storiesContent.length; i++) {
+    const char = storiesContent[i]
+
+    if (char === '{') {
+      if (depth === 0) storyStart = i
+      depth++
+    } else if (char === '}') {
+      depth--
+      if (depth === 0 && storyStart !== -1) {
+        const storyStr = storiesContent.substring(storyStart, i + 1)
+        const story = parseStoryObject(storyStr, true)
+        if (story) stories.push(story)
+        storyStart = -1
+      }
+    } else if (char === ']' && depth === 0) {
+      break
+    }
+  }
+
+  // Check for incomplete story at the end
+  if (storyStart !== -1) {
+    const partialStoryStr = storiesContent.substring(storyStart)
+    const story = parseStoryObject(partialStoryStr, false)
+    if (story) stories.push(story)
+  }
+
+  return stories
+}
+
+// Parse a single story object from JSON string
+function parseStoryObject(storyStr: string, isComplete: boolean): PartialStory | null {
+  const titleMatch = storyStr.match(/"title"\s*:\s*"([^"]*)"/)
+  if (!titleMatch) return null
+
+  const descMatch = storyStr.match(/"description"\s*:\s*"([^"]*)"/)
+  const hoursMatch = storyStr.match(/"estimated_hours"\s*:\s*([\d.]+)/)
+
+  const objectives: string[] = []
+  const objectivesMatch = storyStr.match(/"objectives"\s*:\s*\[/)
+  if (objectivesMatch && objectivesMatch.index !== undefined) {
+    const objStart = objectivesMatch.index + objectivesMatch[0].length
+    const objContent = storyStr.substring(objStart)
+    const objRegex = /"([^"]+)"/g
+    let match
+    while ((match = objRegex.exec(objContent)) !== null) {
+      const beforeMatch = objContent.substring(0, match.index)
+      if (beforeMatch.includes(']')) break
+      objectives.push(match[1])
+    }
+  }
+
+  return {
+    title: titleMatch[1],
+    description: descMatch ? descMatch[1] : '',
+    estimatedHours: hoursMatch ? parseFloat(hoursMatch[1]) : undefined,
+    objectives,
+    isComplete,
+  }
 }
 
 // Extract partial epics for streaming display
 function extractPartialEpics(content: string): PartialEpic[] {
   const epics: PartialEpic[] = []
 
-  // Find the epics array first
   const epicsArrayMatch = content.match(/"epics"\s*:\s*\[/)
   if (!epicsArrayMatch) return epics
 
   const epicsStart = epicsArrayMatch.index! + epicsArrayMatch[0].length
   const epicsContent = content.substring(epicsStart)
 
-  // Find epic blocks by looking for objects with "estimated_hours" or "objectives" (epic-specific fields)
-  // Or objects that contain "stories" array
   let depth = 0
   let epicStart = -1
   let weekNum = 1
@@ -59,36 +137,21 @@ function extractPartialEpics(content: string): PartialEpic[] {
     const char = epicsContent[i]
 
     if (char === '{') {
-      if (depth === 0) {
-        epicStart = i
-      }
+      if (depth === 0) epicStart = i
       depth++
     } else if (char === '}') {
       depth--
       if (depth === 0 && epicStart !== -1) {
-        // Found a complete object at depth 0 - this is an Epic
         const epicStr = epicsContent.substring(epicStart, i + 1)
-
-        // Extract title
         const titleMatch = epicStr.match(/"title"\s*:\s*"([^"]*)"/)
-        // Extract description
         const descMatch = epicStr.match(/"description"\s*:\s*"([^"]*)"/)
 
         if (titleMatch) {
-          // Count stories
-          let storyCount = 0
-          const storiesMatch = epicStr.match(/"stories"\s*:\s*\[/)
-          if (storiesMatch) {
-            const storyTitles = epicStr.match(/"title"\s*:\s*"/g)
-            // First title is the epic title, rest are story titles
-            storyCount = storyTitles ? Math.max(0, storyTitles.length - 1) : 0
-          }
-
           epics.push({
             weekNumber: weekNum,
             title: titleMatch[1],
             description: descMatch ? descMatch[1] : '',
-            storyCount,
+            stories: extractPartialStories(epicStr),
             isComplete: true,
           })
           weekNum++
@@ -96,7 +159,6 @@ function extractPartialEpics(content: string): PartialEpic[] {
         epicStart = -1
       }
     } else if (char === ']' && depth === 0) {
-      // End of epics array
       break
     }
   }
@@ -108,17 +170,11 @@ function extractPartialEpics(content: string): PartialEpic[] {
     const descMatch = partialEpicStr.match(/"description"\s*:\s*"([^"]*)"/)
 
     if (titleMatch) {
-      let storyCount = 0
-      const storyTitles = partialEpicStr.match(/"stories"[\s\S]*?"title"\s*:\s*"/g)
-      if (storyTitles) {
-        storyCount = storyTitles.length
-      }
-
       epics.push({
         weekNumber: weekNum,
         title: titleMatch[1],
         description: descMatch ? descMatch[1] : '',
-        storyCount,
+        stories: extractPartialStories(partialEpicStr),
         isComplete: false,
       })
     }
@@ -134,46 +190,61 @@ interface StreamingContentProps {
   onError: (error: string) => void
 }
 
+const LOADING_MESSAGES = [
+  '공식 문서 리서치 중...',
+  '베스트 프랙티스 찾아보는 중...',
+  '계획 세우는 중...',
+  '학습 경로 설계 중...',
+]
+
 export function StreamingContent({ sessionId, input, onComplete, onError }: StreamingContentProps) {
   const [partialEpics, setPartialEpics] = useState<PartialEpic[]>([])
-  const [typingText, setTypingText] = useState<Record<number, string>>({})
   const [isConnected, setIsConnected] = useState(false)
   const [appearedEpics, setAppearedEpics] = useState<Set<number>>(new Set())
+  const [appearedStories, setAppearedStories] = useState<Set<string>>(new Set())
+  const [expandedStories, setExpandedStories] = useState<Set<string>>(new Set())
+  const [loadingMessageIndex, setLoadingMessageIndex] = useState(0)
   const hasStartedRef = useRef(false)
   const isCancelledRef = useRef(false)
-  const scrollRef = useRef<HTMLDivElement>(null)
 
-  // Mark new epics as appeared and start typing
+  // Rotate loading messages before first content
+  useEffect(() => {
+    if (partialEpics.length > 0) return
+
+    const interval = setInterval(() => {
+      setLoadingMessageIndex(prev => (prev + 1) % LOADING_MESSAGES.length)
+    }, 2000)
+
+    return () => clearInterval(interval)
+  }, [partialEpics.length])
+
+  // Mark new epics and stories as appeared
   useEffect(() => {
     partialEpics.forEach((epic) => {
       if (!appearedEpics.has(epic.weekNumber)) {
         setAppearedEpics(prev => new Set([...prev, epic.weekNumber]))
       }
+      epic.stories.forEach((_, storyIdx) => {
+        const storyKey = `${epic.weekNumber}-${storyIdx}`
+        if (!appearedStories.has(storyKey)) {
+          setAppearedStories(prev => new Set([...prev, storyKey]))
+        }
+      })
     })
-  }, [partialEpics, appearedEpics])
+  }, [partialEpics, appearedEpics, appearedStories])
 
-  // Typing effect for descriptions
-  useEffect(() => {
-    const timers: NodeJS.Timeout[] = []
-
-    partialEpics.forEach((epic) => {
-      const weekNum = epic.weekNumber
-      const currentTyped = typingText[weekNum] || ''
-      const targetText = epic.description
-
-      if (currentTyped.length < targetText.length) {
-        const timer = setTimeout(() => {
-          setTypingText(prev => ({
-            ...prev,
-            [weekNum]: targetText.substring(0, currentTyped.length + 2)
-          }))
-        }, 20)
-        timers.push(timer)
+  const toggleStory = (epicWeek: number, storyIndex: number) => {
+    const key = `${epicWeek}-${storyIndex}`
+    setExpandedStories(prev => {
+      const next = new Set(prev)
+      if (next.has(key)) {
+        next.delete(key)
+      } else {
+        next.add(key)
       }
+      return next
     })
-
-    return () => timers.forEach(t => clearTimeout(t))
-  }, [partialEpics, typingText])
+  }
 
   useEffect(() => {
     if (hasStartedRef.current) return
@@ -309,39 +380,36 @@ export function StreamingContent({ sessionId, input, onComplete, onError }: Stre
     startStream()
   }, [])
 
-  // Auto-scroll when new content appears
-  useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight
-    }
-  }, [partialEpics, typingText])
-
   return (
     <div className="space-y-4">
-      <div
-        ref={scrollRef}
-        className="max-h-[28rem] min-h-32 overflow-y-auto space-y-3 scroll-smooth"
-      >
+      <div className="min-h-32 space-y-3">
         {partialEpics.length === 0 ? (
-          <div className="flex items-center gap-2 rounded-xl bg-zinc-100 p-4 dark:bg-neutral-800">
-            <div className={`h-2 w-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-yellow-500'} animate-pulse`} />
-            <span className="text-sm text-zinc-500 dark:text-zinc-400">
-              {isConnected ? '커리큘럼 생성 중...' : '연결 중...'}
+          <div className="flex items-center gap-3 rounded-xl bg-zinc-100 p-4 dark:bg-neutral-800">
+            <div className="flex items-center gap-1">
+              <span className="inline-block h-2 w-2 animate-bounce rounded-full bg-zinc-400" style={{ animationDelay: '0ms' }} />
+              <span className="inline-block h-2 w-2 animate-bounce rounded-full bg-zinc-400" style={{ animationDelay: '150ms' }} />
+              <span className="inline-block h-2 w-2 animate-bounce rounded-full bg-zinc-400" style={{ animationDelay: '300ms' }} />
+            </div>
+            <span
+              key={loadingMessageIndex}
+              className="text-sm text-zinc-600 dark:text-zinc-300"
+              style={{ animation: 'fadeIn 0.3s ease-in-out' }}
+            >
+              {LOADING_MESSAGES[loadingMessageIndex]}
             </span>
           </div>
         ) : (
           partialEpics.map((epic) => {
             const weekNum = epic.weekNumber
             const isNew = !appearedEpics.has(weekNum)
-            const displayText = typingText[weekNum] || ''
-            const isTyping = displayText.length < epic.description.length
+            const isActiveEpic = !epic.isComplete
 
             return (
               <div
                 key={`epic-${weekNum}`}
                 className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-neutral-700 dark:bg-neutral-800"
                 style={isNew ? {
-                  animation: 'epicSlideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                  animation: 'epicSlideUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards',
                 } : undefined}
               >
                 <div className="flex items-start gap-3">
@@ -352,16 +420,73 @@ export function StreamingContent({ sessionId, input, onComplete, onError }: Stre
                     <h3 className="font-semibold text-zinc-900 dark:text-white truncate">
                       {epic.title}
                     </h3>
-                    <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400 min-h-[2.5rem]">
-                      {displayText}
-                      {isTyping && (
-                        <span className="inline-block w-0.5 h-4 ml-0.5 bg-zinc-400 animate-pulse" />
+                    <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+                      {epic.description}
+                      {isActiveEpic && epic.stories.length === 0 && (
+                        <span className="ml-0.5 inline-block h-4 w-0.5 animate-pulse bg-zinc-400" />
                       )}
                     </p>
-                    {epic.storyCount > 0 && (
-                      <div className="mt-2 flex items-center gap-1 text-xs text-zinc-400">
-                        <BookOpen className="h-3 w-3" />
-                        <span>{epic.storyCount}개 스토리</span>
+
+                    {/* Stories list */}
+                    {epic.stories.length > 0 && (
+                      <div className="mt-3 space-y-2">
+                        {epic.stories.map((story, storyIdx) => {
+                          const storyKey = `${weekNum}-${storyIdx}`
+                          const isExpanded = expandedStories.has(storyKey)
+                          const hasObjectives = story.objectives.length > 0
+                          const isActiveStory = !story.isComplete
+                          const isNewStory = !appearedStories.has(storyKey)
+
+                          return (
+                            <div
+                              key={storyIdx}
+                              className="border-l-2 border-zinc-200 pl-3 dark:border-neutral-600"
+                              style={isNewStory ? {
+                                animation: 'storySlideUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards',
+                              } : undefined}
+                            >
+                              <button
+                                onClick={() => hasObjectives && toggleStory(weekNum, storyIdx)}
+                                className={`flex w-full items-center gap-2 text-left ${hasObjectives ? 'cursor-pointer' : 'cursor-default'}`}
+                                disabled={!hasObjectives}
+                              >
+                                <span className="flex-1 text-sm text-zinc-700 dark:text-zinc-300">
+                                  {story.title}
+                                  {isActiveStory && (
+                                    <span className="ml-0.5 inline-block h-3 w-0.5 animate-pulse bg-zinc-400" />
+                                  )}
+                                </span>
+                                {hasObjectives && (
+                                  <ChevronDown className={`h-4 w-4 shrink-0 text-zinc-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                                )}
+                              </button>
+
+                              {/* Objectives (expanded) */}
+                              {isExpanded && hasObjectives && (
+                                <div className="mt-2 space-y-1 pl-2">
+                                  {story.objectives.map((obj, objIdx) => (
+                                    <div
+                                      key={objIdx}
+                                      className="flex items-start gap-2 text-xs text-zinc-500 dark:text-zinc-400"
+                                    >
+                                      <div className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-zinc-300 dark:bg-zinc-600" />
+                                      <span>{obj}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )}
+
+                    {/* Typing indicator for active epic */}
+                    {isActiveEpic && epic.stories.length > 0 && (
+                      <div className="mt-2 flex items-center gap-1">
+                        <span className="inline-block h-1 w-1 animate-pulse rounded-full bg-zinc-400" />
+                        <span className="inline-block h-1 w-1 animate-pulse rounded-full bg-zinc-400" style={{ animationDelay: '0.2s' }} />
+                        <span className="inline-block h-1 w-1 animate-pulse rounded-full bg-zinc-400" style={{ animationDelay: '0.4s' }} />
                       </div>
                     )}
                   </div>
@@ -371,11 +496,11 @@ export function StreamingContent({ sessionId, input, onComplete, onError }: Stre
           })
         )}
 
-        {partialEpics.length > 0 && isConnected && (
+        {partialEpics.length > 0 && isConnected && !partialEpics[partialEpics.length - 1]?.isComplete && (
           <div className="flex items-center gap-2 rounded-xl bg-zinc-50 p-3 dark:bg-neutral-900">
-            <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+            <div className="h-2 w-2 animate-pulse rounded-full bg-green-500" />
             <span className="text-sm text-zinc-500 dark:text-zinc-400">
-              Week {partialEpics.length + 1} 생성 중...
+              Week {partialEpics.length} 생성 중...
             </span>
           </div>
         )}

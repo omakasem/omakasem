@@ -32,14 +32,6 @@ export function EnrichmentStreaming({ plannerSessionId, onComplete, onError }: E
   const [expandedStories, setExpandedStories] = useState<Set<string>>(new Set())
   const hasStartedRef = useRef(false)
   const epicContentRef = useRef<Map<number, string>>(new Map())
-  const scrollRef = useRef<HTMLDivElement>(null)
-
-  // Auto-scroll when new content appears
-  useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight
-    }
-  }, [epics, currentEpicId])
 
   useEffect(() => {
     if (hasStartedRef.current) return
@@ -288,10 +280,7 @@ export function EnrichmentStreaming({ plannerSessionId, onComplete, onError }: E
       </div>
 
       {/* Epic blocks with streaming stories */}
-      <div
-        ref={scrollRef}
-        className="max-h-[28rem] min-h-32 space-y-3 overflow-y-auto scroll-smooth"
-      >
+      <div className="min-h-32 space-y-3">
         {epics.map((epic) => {
           const isActive = currentEpicId === epic.id
 
@@ -300,7 +289,7 @@ export function EnrichmentStreaming({ plannerSessionId, onComplete, onError }: E
               key={epic.id}
               className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-neutral-700 dark:bg-neutral-800"
               style={{
-                animation: 'epicSlideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                animation: 'epicSlideUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards',
               }}
             >
               {/* Epic header */}
