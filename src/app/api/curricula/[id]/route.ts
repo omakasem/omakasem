@@ -1,8 +1,11 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { NextRequest } from 'next/server'
 
-const PLANNER_URL = process.env.OMAKASEM_PLANNER_URL || 'http://localhost:8000'
+const PLANNER_URL = process.env.OMAKASEM_PLANNER_URL || 'https://planner.omakasem.com'
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY
+
+// Log the URL being used for debugging
+console.log('PLANNER_URL:', PLANNER_URL)
 
 interface Task {
   task_id: string
