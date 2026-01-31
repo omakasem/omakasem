@@ -1,6 +1,7 @@
 import '@/styles/tailwind.css'
 import type { Metadata } from 'next'
 import { ClerkProvider } from '@clerk/nextjs'
+import { koKR } from '@clerk/localizations'
 
 export const metadata: Metadata = {
   title: {
@@ -12,7 +13,7 @@ export const metadata: Metadata = {
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <ClerkProvider>
+    <ClerkProvider localization={koKR}>
       <html
         lang="ko"
         className="text-zinc-950 antialiased lg:bg-zinc-100 dark:bg-zinc-900 dark:text-white dark:lg:bg-zinc-950"
