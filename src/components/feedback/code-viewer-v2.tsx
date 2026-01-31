@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 interface CodeViewerV2Props {
   repoUrl: string
@@ -195,6 +195,25 @@ export function CodeViewerV2({ repoUrl, file, highlightLine, branch = 'main', to
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const isDark = useIsDarkMode()
+  const highlightedLineRef = useRef<HTMLDivElement>(null)
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
+
+  const scrollToHighlightedLine = useCallback(() => {
+    if (highlightedLineRef.current && scrollContainerRef.current) {
+      const container = scrollContainerRef.current
+      const element = highlightedLineRef.current
+      const containerHeight = container.getBoundingClientRect().height
+      const scrollTop = element.offsetTop - container.offsetTop - containerHeight / 3
+      container.scrollTo({ top: Math.max(0, scrollTop), behavior: 'smooth' })
+    }
+  }, [])
+
+  useEffect(() => {
+    if (content && highlightLine) {
+      const timer = setTimeout(scrollToHighlightedLine, 100)
+      return () => clearTimeout(timer)
+    }
+  }, [content, highlightLine, scrollToHighlightedLine])
 
   useEffect(() => {
     if (!file) {
@@ -239,7 +258,7 @@ export function CodeViewerV2({ repoUrl, file, highlightLine, branch = 'main', to
 
   return (
     <div className="flex h-full flex-col self-stretch overflow-hidden rounded-2xl bg-white shadow-[0px_0px_24px_0px_rgba(22,22,22,0.06)] dark:bg-[rgba(255,255,255,0.04)]">
-      <div className="relative flex-1 overflow-auto">
+      <div ref={scrollContainerRef} className="relative flex-1 overflow-auto">
         <div className="sticky top-0 z-10 flex flex-row items-center gap-2 self-stretch bg-white p-5 backdrop-blur-sm dark:bg-[rgba(30,30,30,0.95)]">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
             <path
@@ -299,6 +318,7 @@ export function CodeViewerV2({ repoUrl, file, highlightLine, branch = 'main', to
                     return (
                       <div
                         key={lineNum}
+                        ref={isHighlighted ? highlightedLineRef : undefined}
                         className={`relative ${isHighlighted ? 'bg-[rgba(166,38,164,0.1)] dark:bg-[rgba(224,108,117,0.15)]' : ''}`}
                       >
                         <HighlightedLine line={line || ' '} isDark={isDark} />
