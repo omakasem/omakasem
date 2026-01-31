@@ -57,7 +57,7 @@ const mockSuggestions: Suggestion[] = [
 
 export default function FeedbackTestPage() {
   return (
-    <div className="flex h-screen items-center justify-center bg-black p-8">
+    <div className="flex h-screen items-center justify-center bg-[#F5F5F5] p-4 dark:bg-black">
       <div className="h-full w-full max-w-6xl">
         <FeedbackLayout
           taskTitle="Thread API 만들기"
