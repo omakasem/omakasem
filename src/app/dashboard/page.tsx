@@ -177,7 +177,6 @@ export default async function DashboardPage({ searchParams }: PageProps) {
             epics={epics}
             structure={curriculum.structure}
             oneLiner={curriculum.one_liner}
-            initialStories={initialStories}
             allTasks={tasks.map(serializeTaskForClient)}
           />
         )}

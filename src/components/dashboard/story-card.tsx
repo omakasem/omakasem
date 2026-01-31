@@ -66,7 +66,7 @@ function TaskStatusIcon({ status }: { status: Task['status'] }) {
     )
   }
   return (
-    <div className="flex size-[32px] shrink-0 items-center justify-center rounded-full border-2 border-[rgba(245,245,245,0.2)] bg-transparent" />
+    <div className="flex size-[32px] shrink-0 items-center justify-center rounded-full bg-[rgba(245,245,245,0.04)]" />
   )
 }
 

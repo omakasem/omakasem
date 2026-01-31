@@ -26,7 +26,6 @@ interface DashboardClientProps {
     }[]
   }
   oneLiner: string
-  initialStories: Story[]
   allTasks: TaskData[]
 }
 
@@ -94,14 +93,13 @@ function transformToStoriesWithTasks(
   })
 }
 
-export function DashboardClient({ epics, structure, oneLiner, initialStories, allTasks }: DashboardClientProps) {
+export function DashboardClient({ epics, structure, oneLiner, allTasks }: DashboardClientProps) {
   const [selectedEpicId, setSelectedEpicId] = useState('1')
   const selectedEpicIndex = parseInt(selectedEpicId, 10) - 1
-  const stories =
-    selectedEpicIndex === 0 ? initialStories : transformToStoriesWithTasks(structure, selectedEpicIndex, allTasks)
+  const stories = transformToStoriesWithTasks(structure, selectedEpicIndex, allTasks)
 
   return (
-    <div className="flex flex-col gap-[12px]">
+    <div className="flex flex-col gap-[40px]">
       <EpicNavigation epics={epics} selectedEpicId={selectedEpicId} onSelectEpic={setSelectedEpicId} />
 
       {stories.length > 0 && (
