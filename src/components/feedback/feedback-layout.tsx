@@ -206,7 +206,7 @@ export function FeedbackLayout({ taskTitle, repoUrl, branch = 'main', suggestion
         <div className="absolute bottom-5 left-1/2 z-10 flex -translate-x-1/2 flex-row items-center gap-1 rounded-full border border-[rgba(164,164,164,0.2)] bg-white p-1 shadow-[0px_0px_24px_0px_rgba(22,22,22,0.06)] backdrop-blur-[16px] dark:bg-[#161616]">
           <button
             onClick={onClose}
-            className="flex flex-row items-center justify-center gap-1.5 rounded-full bg-[#161616] px-3 py-3 dark:bg-[#F5F5F5]"
+            className="flex flex-row items-center justify-center gap-1.5 rounded-full bg-[#161616] px-[12px] py-3 dark:bg-[#F5F5F5]"
           >
             <Image src="/icons/close.svg" alt="" width={20} height={20} className="invert dark:invert-0" />
             <span className="font-pretendard text-sm leading-[1.45] font-medium tracking-[-0.02em] whitespace-nowrap text-[#F5F5F5] dark:text-[#161616]">
