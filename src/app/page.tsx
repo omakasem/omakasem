@@ -1,4 +1,5 @@
 import { Button } from '@/components/button'
+import { Logo } from './logo'
 
 export default function LandingPage() {
   return (
@@ -7,8 +8,8 @@ export default function LandingPage() {
       <nav className="fixed top-0 left-0 right-0 z-50 border-b border-zinc-200 bg-white/80 backdrop-blur-sm dark:border-zinc-800 dark:bg-zinc-950/80">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
           <div className="flex items-center gap-2">
+            <Logo size={32} />
             <span className="text-xl font-bold text-zinc-950 dark:text-white">오마카쌤</span>
-            <span className="text-sm text-zinc-500 dark:text-zinc-400">Omakasem</span>
           </div>
           <div className="flex items-center gap-4">
             <Button href="/onboarding" color="dark/zinc">
@@ -166,8 +167,8 @@ export default function LandingPage() {
         <div className="mx-auto max-w-7xl px-6">
           <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
             <div className="flex items-center gap-2">
+              <Logo size={28} />
               <span className="text-lg font-bold text-zinc-950 dark:text-white">오마카쌤</span>
-              <span className="text-sm text-zinc-500 dark:text-zinc-400">Omakasem</span>
             </div>
             <p className="text-sm text-zinc-500 dark:text-zinc-400">
               © 2026 Omakasem. AI-Powered Developer Education.
