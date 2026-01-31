@@ -59,12 +59,7 @@ function ReviewTestContent() {
           </div>
         )}
 
-        {submitted && (
-          <FeedbackPanelV2
-            taskTitle={`Review: ${repoUrl}`}
-            suggestions={[]}
-          />
-        )}
+        {submitted && <FeedbackPanelV2 taskTitle={`Review: ${repoUrl}`} suggestions={[]} />}
       </div>
     </div>
   )

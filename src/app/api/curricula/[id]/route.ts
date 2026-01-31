@@ -1,7 +1,8 @@
+import { getDb } from '@/lib/mongodb'
 import Anthropic from '@anthropic-ai/sdk'
+import { ObjectId } from 'mongodb'
 import { NextRequest } from 'next/server'
 
-const PLANNER_URL = process.env.OMAKASEM_PLANNER_URL || 'https://planner.omakasem.com'
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY
 
 const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages'
@@ -14,8 +15,9 @@ function isOAuthToken(token: string): boolean {
 }
 
 interface Task {
-  task_id: string
-  curriculum_id: string
+  _id: string | ObjectId
+  task_id?: string
+  curriculum_id: string | ObjectId
   epic_index: number
   story_index: number
   epic_title: string
@@ -34,11 +36,33 @@ interface Task {
     repo_url: string
     graded_at: string
   } | null
-  created_at: string
-  updated_at: string
+  created_at: string | Date
+  updated_at: string | Date
 }
 
-interface Curriculum {
+interface CurriculumDocument {
+  _id: string | ObjectId
+  session_id: string
+  course_title: string
+  one_liner: string
+  student_id: string | null
+  clerk_user_id?: string | null
+  status: string
+  total_hours: number
+  total_tasks: number
+  completed_tasks: number
+  structure: {
+    epics: {
+      title: string
+      description: string
+      stories: { title: string; description: string }[]
+    }[]
+  }
+  created_at: string | Date
+  updated_at: string | Date
+}
+
+interface CurriculumResponse {
   curriculum_id: string
   session_id: string
   course_title: string
@@ -58,9 +82,6 @@ interface Curriculum {
   created_at: string
   updated_at: string
   tasks: Task[]
-}
-
-interface CurriculumResponse extends Curriculum {
   progress: number
   weekly_summary: string
 }
@@ -71,7 +92,6 @@ function calculateProgress(tasks: Task[]): number {
   const passedTasks = tasks.filter((t) => t.status === 'passed').length
   const partialTasks = tasks.filter((t) => t.status === 'partial').length
 
-  // passed = 100%, partial = 50%
   const score = passedTasks * 100 + partialTasks * 50
   const maxScore = tasks.length * 100
 
@@ -100,8 +120,7 @@ function generateFallbackSummary(tasks: Task[]): string {
   const partialCount = recentTasks.filter((t) => t.status === 'partial').length
   const failedCount = recentTasks.filter((t) => t.status === 'failed').length
 
-  const avgScore =
-    recentTasks.reduce((sum, t) => sum + (t.grade_result?.percentage || 0), 0) / recentTasks.length
+  const avgScore = recentTasks.reduce((sum, t) => sum + (t.grade_result?.percentage || 0), 0) / recentTasks.length
 
   const parts: string[] = []
   parts.push(`이번 주 ${recentTasks.length}개의 과제를 제출했습니다.`)
@@ -125,7 +144,7 @@ function generateFallbackSummary(tasks: Task[]): string {
   return parts.join(' ')
 }
 
-async function generateAIWeeklySummary(curriculum: Curriculum, tasks: Task[]): Promise<string> {
+async function generateAIWeeklySummary(curriculum: CurriculumDocument, tasks: Task[]): Promise<string> {
   if (!ANTHROPIC_API_KEY) {
     console.log('No ANTHROPIC_API_KEY configured')
     return generateFallbackSummary(tasks)
@@ -174,7 +193,7 @@ ${taskSummaries.map((t) => `- ${t.title}: ${t.status} (${t.score}점, ${t.grade}
       const systemBlocks = [
         {
           type: 'text',
-          text: 'You are Claude Code, Anthropic\'s official CLI for Claude.',
+          text: "You are Claude Code, Anthropic's official CLI for Claude.",
           cache_control: { type: 'ephemeral' },
         },
       ]
@@ -222,31 +241,74 @@ ${taskSummaries.map((t) => `- ${t.title}: ${t.status} (${t.score}점, ${t.grade}
   }
 }
 
+function buildIdQuery(id: string): { _id: ObjectId } | { _id: string } {
+  try {
+    if (ObjectId.isValid(id) && new ObjectId(id).toString() === id) {
+      return { _id: new ObjectId(id) }
+    }
+  } catch {}
+  return { _id: id as unknown as ObjectId }
+}
+
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
 
   try {
-    const response = await fetch(`${PLANNER_URL}/v1/curricula/${id}`, {
-      headers: { 'Content-Type': 'application/json' },
-      cache: 'no-store',
-    })
+    const db = await getDb()
+    const idQuery = buildIdQuery(id)
+    const curriculumDoc = await db.collection<CurriculumDocument>('curricula').findOne(idQuery)
 
-    if (!response.ok) {
-      if (response.status === 404) {
-        return Response.json({ error: 'Curriculum not found' }, { status: 404 })
-      }
-      if (response.status === 503) {
-        return Response.json({ error: 'Planner service unavailable' }, { status: 503 })
-      }
-      return Response.json({ error: 'Failed to fetch curriculum' }, { status: response.status })
+    if (!curriculumDoc) {
+      return Response.json({ error: 'Curriculum not found' }, { status: 404 })
     }
 
-    const curriculum: Curriculum = await response.json()
-    const weeklySummary = await generateAIWeeklySummary(curriculum, curriculum.tasks)
+    let tasks: Task[] = []
+    const curriculumIdStr = curriculumDoc._id.toString()
+
+    try {
+      if (ObjectId.isValid(curriculumIdStr)) {
+        tasks = await db
+          .collection<Task>('tasks')
+          .find({ curriculum_id: new ObjectId(curriculumIdStr) })
+          .sort({ epic_index: 1, story_index: 1 })
+          .toArray()
+      }
+    } catch {}
+
+    if (tasks.length === 0) {
+      tasks = await db
+        .collection<Task>('tasks')
+        .find({ curriculum_id: curriculumIdStr })
+        .sort({ epic_index: 1, story_index: 1 })
+        .toArray()
+    }
+
+    const weeklySummary = await generateAIWeeklySummary(curriculumDoc, tasks)
 
     const result: CurriculumResponse = {
-      ...curriculum,
-      progress: calculateProgress(curriculum.tasks),
+      curriculum_id: curriculumDoc._id.toString(),
+      session_id: curriculumDoc.session_id,
+      course_title: curriculumDoc.course_title,
+      one_liner: curriculumDoc.one_liner,
+      student_id: curriculumDoc.student_id,
+      status: curriculumDoc.status,
+      total_hours: curriculumDoc.total_hours,
+      total_tasks: curriculumDoc.total_tasks,
+      completed_tasks: curriculumDoc.completed_tasks,
+      structure: curriculumDoc.structure,
+      created_at:
+        curriculumDoc.created_at instanceof Date ? curriculumDoc.created_at.toISOString() : curriculumDoc.created_at,
+      updated_at:
+        curriculumDoc.updated_at instanceof Date ? curriculumDoc.updated_at.toISOString() : curriculumDoc.updated_at,
+      tasks: tasks.map((t) => ({
+        ...t,
+        _id: t._id.toString(),
+        task_id: t._id.toString(),
+        curriculum_id: t.curriculum_id.toString(),
+        created_at: t.created_at instanceof Date ? t.created_at.toISOString() : t.created_at,
+        updated_at: t.updated_at instanceof Date ? t.updated_at.toISOString() : t.updated_at,
+      })),
+      progress: calculateProgress(tasks),
       weekly_summary: weeklySummary,
     }
 

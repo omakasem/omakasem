@@ -43,3 +43,6 @@ chroma/
 
 # clerk configuration (can include secrets)
 .clerk
+
+# clerk configuration (can include secrets)
+/.clerk/

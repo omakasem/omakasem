@@ -1,9 +1,8 @@
 'use client'
 
-import { CheckIcon, MinusIcon } from '@heroicons/react/20/solid'
-import { AiGenerativeIcon } from '@hugeicons/core-free-icons'
-import { HugeiconsIcon } from '@hugeicons/react'
 import clsx from 'clsx'
+
+import { MarkdownText } from '@/components/markdown-text'
 
 export interface Task {
   id: string
@@ -31,31 +30,69 @@ interface StoryCardProps {
   className?: string
 }
 
+function CheckIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M4 10L8 14L16 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+function NeurologyIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path
+        d="M8 1.33334V2.66668M8 13.3333V14.6667M14.6667 8H13.3333M2.66667 8H1.33334M12.7141 12.714L11.7713 11.7712M4.22878 4.22878L3.28598 3.28598M12.7141 3.28598L11.7713 4.22878M4.22878 11.7712L3.28598 12.714M10.6667 8C10.6667 9.47277 9.47278 10.6667 8.00001 10.6667C6.52725 10.6667 5.33334 9.47277 5.33334 8C5.33334 6.52724 6.52725 5.33334 8.00001 5.33334C9.47278 5.33334 10.6667 6.52724 10.6667 8Z"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
 function TaskStatusIcon({ status }: { status: Task['status'] }) {
-  const baseClasses = "flex size-5 items-center justify-center rounded-full z-10 ring-4 ring-zinc-100 dark:ring-zinc-800/50"
-  
   if (status === 'passed') {
     return (
-      <div className={clsx(baseClasses, "bg-white text-zinc-900 dark:bg-white dark:text-black")}>
-        <CheckIcon className="size-3" />
+      <div className="flex size-[32px] shrink-0 items-center justify-center rounded-full bg-[#F5F5F5] text-[#161616]">
+        <CheckIcon />
       </div>
     )
   }
   if (status === 'partial') {
     return (
-      <div className={clsx(baseClasses, "bg-zinc-300 text-zinc-500 dark:bg-zinc-600 dark:text-zinc-400")}>
-        <MinusIcon className="size-3" />
+      <div className="flex size-[32px] shrink-0 items-center justify-center rounded-full bg-[#F5F5F5] text-[#161616]">
+        <div className="size-[8px] rounded-full bg-[#161616]" />
       </div>
     )
   }
-  if (status === 'failed') {
+  return (
+    <div className="flex size-[32px] shrink-0 items-center justify-center rounded-full bg-[rgba(245,245,245,0.04)]" />
+  )
+}
+
+function StoryStatusIcon({ completed, total }: { completed: number; total: number }) {
+  if (completed === total && total > 0) {
     return (
-      <div className={clsx(baseClasses, "bg-zinc-300 text-zinc-500 dark:bg-zinc-600 dark:text-zinc-400")}>
-        <MinusIcon className="size-3" />
+      <div className="flex size-[40px] shrink-0 items-center justify-center rounded-full bg-[#F5F5F5] text-[#161616]">
+        <CheckIcon />
       </div>
     )
   }
-  return <div className={clsx(baseClasses, "bg-white border-2 border-zinc-300 dark:bg-zinc-700 dark:border-zinc-500")} />
+  return (
+    <div className="flex size-[40px] shrink-0 items-center justify-center rounded-full bg-[#F5F5F5] text-[#161616]">
+      <span className="text-[16px] font-semibold">{completed}</span>
+    </div>
+  )
+}
+
+function VerticalLine() {
+  return (
+    <div className="flex w-[40px] shrink-0 flex-col items-center justify-stretch self-stretch px-[12px]">
+      <div className="w-[1px] flex-1 bg-gradient-to-b from-[rgba(164,164,164,0.2)] to-transparent" />
+    </div>
+  )
 }
 
 export function StoryCard({ story, className }: StoryCardProps) {
@@ -63,67 +100,87 @@ export function StoryCard({ story, className }: StoryCardProps) {
   const totalTasks = story.tasks.length
 
   return (
-    <div className={clsx('flex overflow-hidden rounded-xl ring-1 ring-zinc-200 dark:ring-zinc-700/50 p-1', className)}>
-      <div className="relative flex-1 p-4">
-
-        {/* Story Header Item */}
-        <div className="relative flex items-start gap-4 mb-6">
-          <div className={clsx(
-            "relative z-10 mt-0.5 flex size-6 items-center justify-center rounded-full ring-4 ring-zinc-100 dark:ring-zinc-800/50",
-            completedTasks === totalTasks 
-              ? "bg-white text-black" 
-              : "bg-zinc-200 text-zinc-700 dark:bg-zinc-700 dark:text-zinc-300"
-          )}>
-            {completedTasks === totalTasks ? (
-              <CheckIcon className="size-4" />
-            ) : (
-              <span className="text-xs font-semibold">{completedTasks}</span>
-            )}
-          </div>
-          <div>
-            <h4 className="font-medium text-zinc-950 dark:text-white leading-tight">{story.title}</h4>
-            <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{story.description}</p>
+    <div
+      className={clsx(
+        'flex items-stretch gap-[4px] rounded-[14px] border border-[rgba(164,164,164,0.2)] p-[4px]',
+        className
+      )}
+    >
+      <div className="flex flex-1 flex-col rounded-[10px]">
+        <div className="flex items-center gap-[8px] px-[12px] py-[10px]">
+          <StoryStatusIcon completed={completedTasks} total={totalTasks} />
+          <div className="flex flex-col justify-center gap-[2px] px-[4px]">
+            <span className="text-[16px] leading-[1.5] font-medium tracking-[-0.02em] text-[#F5F5F5]">
+              {story.title}
+            </span>
+            <span className="text-[14px] leading-[1.45] font-normal tracking-[-0.02em] text-[rgba(245,245,245,0.72)]">
+              {story.description}
+            </span>
           </div>
         </div>
 
-        <div className="space-y-3 pl-10">
-          {story.tasks.map((task) => (
-            <div key={task.id} className="relative flex items-start gap-3">
+        {story.tasks.map((task, idx) => (
+          <div key={task.id} className="flex items-center px-[12px]">
+            {idx < story.tasks.length - 1 ? (
+              <VerticalLine />
+            ) : (
+              <div className="flex w-[40px] shrink-0 flex-col items-center justify-stretch self-stretch px-[12px] pb-[8px]">
+                <div className="w-[1px] flex-1 bg-gradient-to-b from-[rgba(164,164,164,0.2)] to-transparent" />
+              </div>
+            )}
+            <div className="flex flex-1 items-center gap-[6px] py-[8px]">
               <TaskStatusIcon status={task.status} />
-              <div className="min-w-0 flex-1 pt-0.5">
-                <div className="text-sm font-medium text-zinc-950 dark:text-white leading-tight">{task.title}</div>
+              <div className="flex flex-col justify-center gap-[2px] px-[4px]">
+                <span className="text-[16px] leading-[1.5] font-medium tracking-[-0.02em] text-[#F5F5F5]">
+                  {task.title}
+                </span>
                 {task.description && (
-                  <div className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-500">{task.description}</div>
+                  <span className="text-[14px] leading-[1.45] font-normal tracking-[-0.02em] text-[rgba(245,245,245,0.72)]">
+                    {task.description}
+                  </span>
                 )}
               </div>
             </div>
-          ))}
-        </div>
+          </div>
+        ))}
       </div>
 
-      {/* Right: AI Feedback Panel */}
       {story.aiFeedback && (
-        <div className="w-[40%] rounded-xl bg-zinc-100 p-5 dark:bg-zinc-800/50">
-          <div className="flex items-center justify-between text-xs text-zinc-500">
-            <span className="flex items-center gap-1.5 font-medium">
-              <HugeiconsIcon icon={AiGenerativeIcon} size={16} /> 
+        <div className="flex w-[380px] shrink-0 flex-col gap-[8px] self-stretch rounded-[10px] bg-[rgba(245,245,245,0.04)] p-[16px]">
+          <div className="flex items-center gap-[4px] p-[4px]">
+            <div className="text-[rgba(245,245,245,0.56)]">
+              <NeurologyIcon />
+            </div>
+            <span className="flex-1 text-[12px] leading-[1.35] font-normal tracking-[-0.02em] text-[rgba(245,245,245,0.56)]">
               AI 피드백 요약
             </span>
-            <span className="opacity-70">{story.aiFeedback.date}</span>
+            <span className="text-[12px] leading-[1.35] font-normal tracking-[-0.02em] text-[rgba(245,245,245,0.4)]">
+              {story.aiFeedback.date}
+            </span>
           </div>
-          <div className="mt-3">
-            <div className="text-xs font-medium text-zinc-600 dark:text-zinc-400">Story 수행 요약</div>
-            <p className="mt-1.5 text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed">{story.aiFeedback.summary}</p>
+
+          <div className="flex flex-col gap-[2px] p-[4px]">
+            <span className="text-[12px] leading-[1.35] font-normal tracking-[-0.02em] text-[rgba(245,245,245,0.72)]">
+              Story 수행 요약
+            </span>
+            <p className="text-[14px] leading-[1.45] font-medium tracking-[-0.02em] text-[#F5F5F5]">
+              <MarkdownText>{story.aiFeedback.summary}</MarkdownText>
+            </p>
           </div>
-          {story.aiFeedback.taskFeedback && (
-            <div className="mt-4 space-y-3">
+
+          {story.aiFeedback.taskFeedback && Object.keys(story.aiFeedback.taskFeedback).length > 0 && (
+            <>
               {Object.entries(story.aiFeedback.taskFeedback).map(([taskTitle, feedback]) => (
-                <div key={taskTitle} className="rounded bg-white/50 p-2 dark:bg-black/20">
-                  <div className="text-xs font-medium text-zinc-600 dark:text-zinc-400 mb-1">{taskTitle}</div>
-                  <p className="text-xs text-zinc-500 dark:text-zinc-500">{feedback}</p>
+                <div key={taskTitle} className="flex flex-col gap-[2px] p-[4px]">
+                  <span className="text-[12px] leading-[1.35] font-normal tracking-[-0.02em] text-[rgba(245,245,245,0.56)]">
+                    {taskTitle}
+                  </span>
+                  <span className="text-[14px] leading-[1.45] font-normal tracking-[-0.02em] text-[rgba(245,245,245,0.72)]">
+                    <MarkdownText>{feedback}</MarkdownText>
+                  </span>
                 </div>
               ))}
-            </div>
+            </>
           )}
         </div>
       )}
@@ -138,12 +195,9 @@ interface StoryListProps {
 
 export function StoryList({ stories, className }: StoryListProps) {
   return (
-    <div className={clsx('space-y-4', className)}>
+    <div className={clsx('flex flex-col gap-[12px]', className)}>
       {stories.map((story) => (
-        <StoryCard
-          key={story.id}
-          story={story}
-        />
+        <StoryCard key={story.id} story={story} />
       ))}
     </div>
   )

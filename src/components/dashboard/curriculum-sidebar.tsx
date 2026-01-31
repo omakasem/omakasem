@@ -5,10 +5,8 @@ import { Badge } from '@/components/badge'
 import { Button } from '@/components/button'
 import { Input, InputGroup } from '@/components/input'
 import { ArrowRightStartOnRectangleIcon, MagnifyingGlassIcon, PlusIcon, XMarkIcon } from '@heroicons/react/16/solid'
-import { BookOpen01Icon, CodeIcon, GridIcon, SourceCodeIcon, SourceCodeSquareIcon } from '@hugeicons/core-free-icons'
-import { HugeiconsIcon } from '@hugeicons/react'
 import clsx from 'clsx'
-import Image from 'next/image'
+import NextImage from 'next/image'
 
 export interface Curriculum {
   id: string
@@ -37,11 +35,14 @@ function getProgressColor(progress: number): 'lime' | 'yellow' | 'cyan' | 'zinc'
   return 'zinc'
 }
 
-const curriculumIcons: Record<string, typeof CodeIcon> = {
-  python: SourceCodeIcon,
-  react: GridIcon,
-  nestjs: SourceCodeSquareIcon,
-  default: BookOpen01Icon,
+const curriculumIcons: Record<string, string> = {
+  python: '/icons/python.svg',
+  'react-native': '/icons/react-native.svg',
+  nestjs: '/icons/nestjs.svg',
+  'thread-api': '/icons/thread-api.svg',
+  swiftui: '/icons/swiftui.svg',
+  'claude-agent': '/icons/claude-agent.svg',
+  replit: '/icons/replit.svg',
 }
 
 export function CurriculumSidebar({
@@ -54,15 +55,13 @@ export function CurriculumSidebar({
 }: CurriculumSidebarProps) {
   return (
     <div className="flex h-full flex-col bg-white dark:bg-zinc-900">
-      {/* Logo */}
       <div className="p-4">
         <div className="flex items-center gap-2">
-          <Image src="/light.svg" alt="" width={28} height={28} className="dark:hidden" />
-          <Image src="/dark.svg" alt="" width={28} height={28} className="hidden dark:block" />
+          <NextImage src="/light.svg" alt="" width={28} height={28} className="dark:hidden" />
+          <NextImage src="/dark.svg" alt="" width={28} height={28} className="hidden dark:block" />
         </div>
       </div>
 
-      {/* Search */}
       <div className="px-4 pb-2">
         <InputGroup>
           <MagnifyingGlassIcon data-slot="icon" className="text-zinc-500" />
@@ -71,19 +70,17 @@ export function CurriculumSidebar({
         </InputGroup>
       </div>
 
-      {/* New Journey Button */}
       <div className="px-4 py-2">
         <Button href="/onboarding" outline className="w-full justify-center">
           <PlusIcon className="size-4" />새 빌더 여정
         </Button>
       </div>
 
-      {/* Curriculum List */}
       <div className="flex-1 overflow-y-auto px-4 py-2">
         <h3 className="mb-2 text-xs font-medium text-zinc-500">빌더 여정들</h3>
         <div className="space-y-1">
           {curricula.map((curriculum) => {
-            const IconComponent = curriculumIcons[curriculum.icon || 'default'] || curriculumIcons.default
+            const iconPath = curriculum.icon ? curriculumIcons[curriculum.icon] : null
             return (
               <button
                 key={curriculum.id}
@@ -96,7 +93,11 @@ export function CurriculumSidebar({
                 )}
               >
                 <div className="flex min-w-0 items-center gap-2">
-                  <HugeiconsIcon icon={IconComponent} size={18} className="shrink-0" />
+                  {iconPath ? (
+                    <NextImage src={iconPath} alt="" width={20} height={20} className="shrink-0" />
+                  ) : (
+                    <div className="size-5 shrink-0 rounded bg-zinc-300 dark:bg-zinc-700" />
+                  )}
                   <span className="truncate">{curriculum.title}</span>
                 </div>
                 <Badge color={getProgressColor(curriculum.progress)} className="ml-2 shrink-0">
@@ -108,7 +109,6 @@ export function CurriculumSidebar({
         </div>
       </div>
 
-      {/* User Profile */}
       {user && (
         <div className="border-t border-zinc-200 p-4 dark:border-zinc-800">
           <div className="flex items-center justify-between">
