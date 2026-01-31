@@ -2,66 +2,21 @@
 
 import type { Suggestion } from '@/components/feedback'
 import { FeedbackLayout } from '@/components/feedback'
+import { Loader2 } from 'lucide-react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Suspense, useEffect, useState } from 'react'
+import { Suspense, useCallback, useEffect, useState } from 'react'
 
-const DEFAULT_REPO_URL = 'https://github.com/junhoyeo/threads-api'
-
-const mockSuggestions: Suggestion[] = [
-  {
-    category: 'security',
-    title: '하드코딩된 민감한 헤더 정보 노출',
-    description:
-      'User-Agent와 기타 브라우저 헤더가 하드코딩되어 있어 탐지 위험이 높습니다. 동적으로 생성하거나 설정 파일에서 관리해야 합니다.',
-    file: 'fetch-dynamic-data/index.deno.ts',
-    line: 8,
-    priority: 'high',
-    rationale: '하드코딩된 헤더는 봇 탐지 시스템에 의해 쉽게 식별될 수 있으며, 스크래핑 차단의 원인이 될 수 있습니다.',
-  },
-  {
-    category: 'code_quality',
-    title: '취약한 HTML 파싱 로직',
-    description:
-      '문자열 split()을 사용한 HTML 파싱은 매우 취약합니다.\nDOM 파서나 정규식을 사용하여 더 안정적인 파싱을 구현해야 합니다.',
-    file: 'fetch-dynamic-data/index.deno.ts',
-    line: 30,
-    priority: 'high',
-    rationale: 'DOM 구조 변경 시 파싱이 실패할 수 있습니다.',
-  },
-  {
-    category: 'architecture',
-    title: '에러 핸들링 부재',
-    description:
-      '네트워크 요청 실패, 파일 쓰기 실패, 파싱 실패 등에 대한 에러 처리가 전혀 없습니다.\ntry-catch 블록과 적절한 에러 핸들링을 추가해야 합니다.',
-    file: 'fetch-dynamic-data/index.deno.ts',
-    line: 6,
-    priority: 'high',
-    rationale: '에러 발생 시 프로그램이 비정상 종료될 수 있습니다.',
-  },
-  {
-    category: 'code_quality',
-    title: '테스트에서 실제 API 호출',
-    description: '테스트가 실제 API를 호출하고 있어 불안정하고 느립니다.\n모킹을 사용하여 테스트를 격리해야 합니다.',
-    file: 'threads-api/src/threads-api.ts',
-    line: 15,
-    priority: 'medium',
-    rationale: '외부 API 의존성으로 인해 테스트가 불안정해집니다.',
-  },
-  {
-    category: 'security',
-    title: '환경변수에서 민감한 데이터 노출',
-    description:
-      'USERNAME, PASSWORD, TOKEN 등의 민감한 정보가 환경변수에서 직접 노출됩니다. 암호화하거나 보안 저장소를 사용해야 합니다.',
-    file: 'threads-api/src/constants.ts',
-    line: 1,
-    priority: 'medium',
-    rationale: '민감한 정보가 노출될 위험이 있습니다.',
-  },
-]
+type PageState = 'loading' | 'no-repo' | 'reviewing' | 'ready' | 'error'
 
 interface CurriculumData {
   course_title: string
   git_repo?: string
+}
+
+interface ReviewResult {
+  status: 'pending' | 'cloning' | 'running' | 'completed' | 'failed'
+  suggestions?: Suggestion[]
+  error?: string
 }
 
 function FeedbackPageContent() {
@@ -69,41 +24,152 @@ function FeedbackPageContent() {
   const searchParams = useSearchParams()
   const curriculumId = searchParams.get('curriculumId')
 
+  const [pageState, setPageState] = useState<PageState>('loading')
   const [curriculum, setCurriculum] = useState<CurriculumData | null>(null)
-  const [loading, setLoading] = useState(!!curriculumId)
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([])
+  const [reviewId, setReviewId] = useState<string | null>(null)
+  const [statusMessage, setStatusMessage] = useState('')
+  const [error, setError] = useState<string | null>(null)
+
+  const pollReview = useCallback(async (id: string) => {
+    try {
+      const response = await fetch(`/api/review/${id}`)
+      if (!response.ok) throw new Error('Failed to fetch review status')
+
+      const data: ReviewResult = await response.json()
+
+      switch (data.status) {
+        case 'pending':
+          setStatusMessage('리뷰 대기 중...')
+          return false
+        case 'cloning':
+          setStatusMessage('저장소 클론 중...')
+          return false
+        case 'running':
+          setStatusMessage('코드 분석 중...')
+          return false
+        case 'completed':
+          setSuggestions(data.suggestions || [])
+          setPageState('ready')
+          return true
+        case 'failed':
+          setError(data.error || '리뷰 실패')
+          setPageState('error')
+          return true
+      }
+      return false
+    } catch {
+      setError('리뷰 상태 확인 실패')
+      setPageState('error')
+      return true
+    }
+  }, [])
 
   useEffect(() => {
-    if (!curriculumId) return
+    if (!curriculumId) {
+      setError('curriculumId가 필요합니다')
+      setPageState('error')
+      return
+    }
 
     fetch(`/api/curricula/${curriculumId}`)
       .then((res) => res.json())
-      .then((data) => {
-        setCurriculum({
+      .then(async (data) => {
+        const currData: CurriculumData = {
           course_title: data.course_title,
           git_repo: data.git_repo,
+        }
+        setCurriculum(currData)
+
+        if (!currData.git_repo) {
+          setPageState('no-repo')
+          return
+        }
+
+        setPageState('reviewing')
+        setStatusMessage('리뷰 시작 중...')
+
+        const reviewResponse = await fetch('/api/review', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ repo_url: currData.git_repo, branch: 'main' }),
         })
+
+        if (!reviewResponse.ok) {
+          const errData = await reviewResponse.json()
+          throw new Error(errData.error || 'Failed to create review')
+        }
+
+        const reviewData = await reviewResponse.json()
+        setReviewId(reviewData.review_id || reviewData.id)
       })
-      .catch(console.error)
-      .finally(() => setLoading(false))
+      .catch((err) => {
+        setError(err instanceof Error ? err.message : '로딩 실패')
+        setPageState('error')
+      })
   }, [curriculumId])
 
-  if (loading) {
+  useEffect(() => {
+    if (pageState !== 'reviewing' || !reviewId) return
+
+    const interval = setInterval(async () => {
+      const isDone = await pollReview(reviewId)
+      if (isDone) clearInterval(interval)
+    }, 2000)
+
+    pollReview(reviewId)
+    return () => clearInterval(interval)
+  }, [pageState, reviewId, pollReview])
+
+  if (pageState === 'loading') {
     return (
-      <div className="flex h-full w-full items-center justify-center">
-        <div className="text-zinc-500">로딩 중...</div>
+      <div className="flex h-full w-full flex-col items-center justify-center gap-4">
+        <Loader2 className="h-8 w-8 animate-spin text-zinc-500" />
+        <p className="text-sm text-zinc-500">커리큘럼 로딩 중...</p>
       </div>
     )
   }
 
-  const taskTitle = curriculum?.course_title || 'Thread API 만들기'
-  const repoUrl = curriculum?.git_repo || DEFAULT_REPO_URL
+  if (pageState === 'error') {
+    return (
+      <div className="flex h-full w-full flex-col items-center justify-center gap-4">
+        <div className="rounded-xl bg-red-50 p-4 text-sm text-red-600 dark:bg-red-900/20 dark:text-red-400">
+          {error}
+        </div>
+        <button onClick={() => router.back()} className="text-sm text-zinc-500 underline hover:text-zinc-700">
+          돌아가기
+        </button>
+      </div>
+    )
+  }
+
+  if (pageState === 'no-repo') {
+    return (
+      <div className="flex h-full w-full flex-col items-center justify-center gap-4">
+        <p className="text-zinc-500">이 커리큘럼에는 연결된 저장소가 없습니다.</p>
+        <button onClick={() => router.back()} className="text-sm text-zinc-500 underline hover:text-zinc-700">
+          돌아가기
+        </button>
+      </div>
+    )
+  }
+
+  if (pageState === 'reviewing') {
+    return (
+      <div className="flex h-full w-full flex-col items-center justify-center gap-4">
+        <Loader2 className="h-8 w-8 animate-spin text-zinc-500" />
+        <p className="text-sm text-zinc-500">{statusMessage}</p>
+        <p className="text-xs text-zinc-400">{curriculum?.git_repo}</p>
+      </div>
+    )
+  }
 
   return (
     <div className="h-[calc(100dvh-1rem)] w-full p-2">
       <FeedbackLayout
-        taskTitle={taskTitle}
-        repoUrl={repoUrl}
-        suggestions={mockSuggestions}
+        taskTitle={curriculum?.course_title || '코드 리뷰'}
+        repoUrl={curriculum?.git_repo || ''}
+        suggestions={suggestions}
         onClose={() => router.back()}
       />
     </div>
