@@ -1,7 +1,6 @@
 'use server'
 
 import { getCurriculaCollection, getSessionsCollection, getTasksCollection } from '@/lib/mongodb'
-import { plannerClient } from '@/lib/planner-client'
 import type { EnrichedCoursePlan, EnrichedTask } from '@/types/planner'
 import { auth } from '@clerk/nextjs/server'
 import { ObjectId } from 'mongodb'
@@ -180,35 +179,12 @@ export async function saveCurriculumFromPlan(
       console.log('[saveCurriculumFromPlan] No tasks to insert')
     }
 
-    if (session.plannerSessionId) {
-      try {
-        const draftPlan = {
-          title: plan.course_title,
-          oneLiner: plan.one_liner,
-          epics: plan.epics.map((epic) => ({
-            epicId: '',
-            weekNumber: epic.order || 0,
-            title: epic.title,
-            description: epic.description,
-            stories: epic.stories.map((story) => ({
-              storyId: '',
-              title: story.title,
-              description: story.description,
-              taskCount: story.tasks?.length || 0,
-            })),
-          })),
-        }
-        await plannerClient.savePlan(session.plannerSessionId, draftPlan, session.input.githubUrl)
-        console.log('[saveCurriculumFromPlan] Planner API save success')
-      } catch (apiError) {
-        console.error('[saveCurriculumFromPlan] Planner API save failed (continuing):', apiError)
-      }
-    }
+    // Note: Planner API POST is now done client-side directly
 
     await sessions.updateOne({ sessionId }, { $set: { status: 'approved', updatedAt: new Date() } })
     console.log('[saveCurriculumFromPlan] session updated')
 
-    return { success: true, curriculumId, planId: session.plannerSessionId }
+    return { success: true, curriculumId }
   } catch (error) {
     console.error('[saveCurriculumFromPlan] Failed to save curriculum:', error)
     return { error: '커리큘럼 저장에 실패했습니다' }
