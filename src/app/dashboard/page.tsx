@@ -38,6 +38,28 @@ function transformTaskToUI(task: TaskDocument): Task {
   }
 }
 
+/**
+ * Serialize TaskDocument for Client Components.
+ * MongoDB ObjectIds have toJSON methods that Next.js can't serialize,
+ * so we convert to plain objects with string IDs only.
+ */
+function serializeTaskForClient(task: TaskDocument) {
+  return {
+    _id: task._id.toString(),
+    title: task.title,
+    status: task.status,
+    epic_index: task.epic_index,
+    story_index: task.story_index,
+    grade_result: task.grade_result
+      ? {
+          grade: task.grade_result.grade,
+          percentage: task.grade_result.percentage,
+          graded_at: task.grade_result.graded_at,
+        }
+      : null,
+  }
+}
+
 function transformToStoriesWithTasks(
   structure: { epics: { title: string; description: string; stories: { title: string; description: string }[] }[] } | undefined,
   epicIndex: number,
@@ -128,7 +150,7 @@ export default async function DashboardPage() {
           structure={firstCurriculum.structure}
           oneLiner={firstCurriculum.one_liner}
           initialStories={initialStories}
-          allTasks={tasks}
+          allTasks={tasks.map(serializeTaskForClient)}
         />
       )}
     </>
