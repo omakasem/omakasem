@@ -21,7 +21,7 @@ function CompleteContent() {
 
     const fetchPlan = async () => {
       try {
-        const response = await fetch(`/api/plans/${planId}`)
+        const response = await fetch(`https://planner.omakasem.com/v1/plans/${planId}`)
         if (!response.ok) throw new Error('Failed to fetch plan')
         const data = await response.json()
         setPlan(data)

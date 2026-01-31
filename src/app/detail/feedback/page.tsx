@@ -99,12 +99,12 @@ function FeedbackPageContent() {
   const repoUrl = curriculum?.git_repo || DEFAULT_REPO_URL
 
   return (
-    <div className="h-full w-full p-4">
+    <div className="h-[calc(100dvh-1rem)] w-full p-2">
       <FeedbackLayout
         taskTitle={taskTitle}
         repoUrl={repoUrl}
         suggestions={mockSuggestions}
-        onClose={() => router.push('/dashboard')}
+        onClose={() => router.back()}
       />
     </div>
   )

@@ -7,7 +7,22 @@ export async function GET() {
     const collection = db.collection<CurriculumDocument>('curricula')
 
     const curricula = await collection
-      .find({ status: { $nin: ['disabled'] } })
+      .find(
+        { status: { $nin: ['disabled'] } },
+        {
+          projection: {
+            _id: 1,
+            course_title: 1,
+            icon: 1,
+            icon_id: 1,
+            git_repo: 1,
+            total_tasks: 1,
+            completed_tasks: 1,
+            status: 1,
+            updated_at: 1,
+          },
+        }
+      )
       .sort({ updated_at: -1 })
       .toArray()
 

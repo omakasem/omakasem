@@ -1,9 +1,9 @@
 'use server'
 
-import { getCurriculaCollection, getSessionsCollection } from '@/lib/mongodb'
-import { plannerClient } from '@/lib/planner-client'
-import type { CoursePlan } from '@/types/planner'
+import { getCurriculaCollection, getSessionsCollection, getTasksCollection } from '@/lib/mongodb'
+import type { EnrichedCoursePlan, EnrichedTask } from '@/types/planner'
 import { auth } from '@clerk/nextjs/server'
+import { ObjectId } from 'mongodb'
 
 export type ReviewResult = {
   success?: boolean
@@ -47,9 +47,74 @@ export type SaveCurriculumResult = {
   error?: string
 }
 
-export async function saveCurriculumFromPlan(sessionId: string, plan: CoursePlan): Promise<SaveCurriculumResult> {
+function transformAcceptanceCriteria(criteria: string[]): { description: string; weight: number }[] {
+  if (!criteria || criteria.length === 0) {
+    return [{ description: '과제를 완료하세요', weight: 1.0 }]
+  }
+  const weight = 1.0 / criteria.length
+  return criteria.map((description) => ({ description, weight }))
+}
+
+function countTasksInPlan(plan: EnrichedCoursePlan): number {
+  return plan.epics.reduce(
+    (sum, epic) => sum + epic.stories.reduce((storySum, story) => storySum + (story.tasks?.length || 0), 0),
+    0
+  )
+}
+
+interface TaskDocumentInput {
+  curriculum_id: ObjectId
+  epic_index: number
+  story_index: number
+  epic_title: string
+  story_title: string
+  title: string
+  description: string
+  acceptance_criteria: { description: string; weight: number }[]
+  estimated_minutes: number | null
+  status: 'pending'
+  grade_result: null
+  created_at: Date
+  updated_at: Date
+}
+
+function extractTasksFromPlan(plan: EnrichedCoursePlan, curriculumId: ObjectId): TaskDocumentInput[] {
+  const tasks: TaskDocumentInput[] = []
+  const now = new Date()
+
+  plan.epics.forEach((epic, epicIndex) => {
+    epic.stories.forEach((story, storyIndex) => {
+      if (!story.tasks) return
+
+      story.tasks.forEach((task: EnrichedTask) => {
+        tasks.push({
+          curriculum_id: curriculumId,
+          epic_index: epicIndex,
+          story_index: storyIndex,
+          epic_title: epic.title,
+          story_title: story.title,
+          title: task.title,
+          description: story.description || '',
+          acceptance_criteria: transformAcceptanceCriteria(task.acceptance_criteria),
+          estimated_minutes: task.estimated_minutes ?? null,
+          status: 'pending',
+          grade_result: null,
+          created_at: now,
+          updated_at: now,
+        })
+      })
+    })
+  })
+
+  return tasks
+}
+
+export async function saveCurriculumFromPlan(
+  sessionId: string,
+  plan: EnrichedCoursePlan
+): Promise<SaveCurriculumResult> {
   console.log('[saveCurriculumFromPlan] called with sessionId:', sessionId)
-  console.log('[saveCurriculumFromPlan] plan:', JSON.stringify(plan, null, 2))
+  console.log('[saveCurriculumFromPlan] plan keys:', Object.keys(plan))
 
   const { userId } = await auth()
   if (!userId) {
@@ -67,20 +132,19 @@ export async function saveCurriculumFromPlan(sessionId: string, plan: CoursePlan
       return { error: '세션을 찾을 수 없습니다' }
     }
 
-    const totalTasks = plan.epics.reduce(
-      (sum, epic) => sum + epic.stories.reduce((s, story) => s + (story.taskCount || 0), 0),
-      0
-    )
+    const totalTasks = countTasksInPlan(plan)
     console.log('[saveCurriculumFromPlan] totalTasks:', totalTasks)
 
     const totalHours = session.input.totalWeeks * session.input.weeklyHours
 
     const curricula = await getCurriculaCollection()
+    const curriculumOid = new ObjectId()
 
-    const doc = {
+    const curriculumDoc = {
+      _id: curriculumOid,
       session_id: sessionId,
-      course_title: plan.title,
-      one_liner: plan.oneLiner,
+      course_title: plan.course_title,
+      one_liner: plan.one_liner,
       student_id: null,
       clerk_user_id: userId,
       status: 'active' as const,
@@ -101,27 +165,26 @@ export async function saveCurriculumFromPlan(sessionId: string, plan: CoursePlan
       updated_at: new Date(),
     }
 
-    console.log('[saveCurriculumFromPlan] inserting doc')
-    const result = await curricula.insertOne(doc)
-    const curriculumId = result.insertedId.toString()
-    console.log('[saveCurriculumFromPlan] MongoDB inserted successfully')
+    console.log('[saveCurriculumFromPlan] inserting curriculum doc')
+    await curricula.insertOne(curriculumDoc)
+    const curriculumId = curriculumOid.toString()
+    console.log('[saveCurriculumFromPlan] Curriculum inserted:', curriculumId)
 
-    // Save to Planner API (non-blocking - don't fail if this fails)
-    if (session.plannerSessionId) {
-      try {
-        await plannerClient.savePlan(session.plannerSessionId, plan, session.input.githubUrl)
-        console.log('[saveCurriculumFromPlan] Planner API save success')
-      } catch (apiError) {
-        console.error('[saveCurriculumFromPlan] Planner API save failed (continuing):', apiError)
-        // Don't throw - continue with flow
-      }
+    const taskDocs = extractTasksFromPlan(plan, curriculumOid)
+    if (taskDocs.length > 0) {
+      const tasksCollection = await getTasksCollection()
+      const insertResult = await tasksCollection.insertMany(taskDocs)
+      console.log('[saveCurriculumFromPlan] Tasks inserted:', insertResult.insertedCount)
+    } else {
+      console.log('[saveCurriculumFromPlan] No tasks to insert')
     }
 
-    // Update session status
+    // Note: Planner API POST is now done client-side directly
+
     await sessions.updateOne({ sessionId }, { $set: { status: 'approved', updatedAt: new Date() } })
     console.log('[saveCurriculumFromPlan] session updated')
 
-    return { success: true, curriculumId, planId: session.plannerSessionId }
+    return { success: true, curriculumId }
   } catch (error) {
     console.error('[saveCurriculumFromPlan] Failed to save curriculum:', error)
     return { error: '커리큘럼 저장에 실패했습니다' }

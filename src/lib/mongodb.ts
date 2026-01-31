@@ -33,9 +33,14 @@ export async function connectToDatabase(): Promise<{ client: MongoClient; db: Db
 
   if (!cached.promise) {
     const options = {
-      directConnection: true,
-      serverSelectionTimeoutMS: 10000,
+      maxPoolSize: 10,
+      minPoolSize: 2,
+      maxIdleTimeMS: 30000,
+      serverSelectionTimeoutMS: 5000,
       connectTimeoutMS: 10000,
+      socketTimeoutMS: 45000,
+      retryWrites: true,
+      retryReads: true,
     }
 
     cached.promise = MongoClient.connect(MONGODB_URI, options).then((client) => {
@@ -61,4 +66,9 @@ export async function getSessionsCollection() {
 export async function getCurriculaCollection() {
   const db = await getDb()
   return db.collection('curricula')
+}
+
+export async function getTasksCollection() {
+  const db = await getDb()
+  return db.collection('tasks')
 }

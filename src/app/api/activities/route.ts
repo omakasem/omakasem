@@ -20,19 +20,24 @@ export async function GET(request: Request) {
     startDate.setDate(startDate.getDate() - days)
     const startDateStr = startDate.toISOString().split('T')[0]
 
-    const activities = await collection
-      .find({
-        clerk_user_id: userId,
-        date: { $gte: startDateStr },
-      })
-      .sort({ date: 1 })
+    const aggregatedActivities = await collection
+      .aggregate<{ _id: string; count: number }>([
+        {
+          $match: {
+            clerk_user_id: userId,
+            date: { $gte: startDateStr },
+          },
+        },
+        {
+          $group: {
+            _id: '$date',
+            count: { $sum: '$count' },
+          },
+        },
+      ])
       .toArray()
 
-    const activityMap = new Map<string, number>()
-    for (const activity of activities) {
-      const existing = activityMap.get(activity.date) || 0
-      activityMap.set(activity.date, existing + activity.count)
-    }
+    const activityMap = new Map(aggregatedActivities.map((a) => [a._id, a.count]))
 
     const response: ActivityData[] = []
     const today = new Date()

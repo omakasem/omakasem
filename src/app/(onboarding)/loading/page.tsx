@@ -4,7 +4,7 @@ import { DraftPreview } from '@/components/draft-preview'
 import { EnrichmentStreaming } from '@/components/enrichment-streaming'
 import { ProgressSteps } from '@/components/progress-steps'
 import { StreamingContent } from '@/components/streaming-content'
-import type { CourseInput, CoursePlan } from '@/types/planner'
+import type { CourseInput, CoursePlan, EnrichedCoursePlan } from '@/types/planner'
 import { AlertCircle, CheckCircle, Flag, Loader2, XCircle } from 'lucide-react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Suspense, useCallback, useEffect, useState } from 'react'
@@ -20,7 +20,7 @@ function LoadingContent() {
   const [pageState, setPageState] = useState<PageState>('loading')
   const [input, setInput] = useState<CourseInput | null>(null)
   const [draft, setDraft] = useState<CoursePlan | null>(null)
-  const [enrichedPlan, setEnrichedPlan] = useState<CoursePlan | null>(null)
+  const [enrichedPlan, setEnrichedPlan] = useState<EnrichedCoursePlan | null>(null)
   const [plannerSessionId, setPlannerSessionId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -76,27 +76,61 @@ function LoadingContent() {
 
   const handleEnrichmentComplete = useCallback((plan: unknown) => {
     console.log('[handleEnrichmentComplete] received plan:', plan)
-    setEnrichedPlan(plan as CoursePlan)
+    setEnrichedPlan(plan as EnrichedCoursePlan)
     setPageState('enrichment_complete')
   }, [])
 
   const handleConfirmAndSave = async () => {
-    console.log('[handleConfirmAndSave] called', { sessionId, enrichedPlan })
-    if (!sessionId || !enrichedPlan) {
-      console.error('[handleConfirmAndSave] missing sessionId or enrichedPlan')
+    console.log('[handleConfirmAndSave] called', { sessionId, enrichedPlan, plannerSessionId })
+    if (!sessionId || !enrichedPlan || !plannerSessionId) {
+      console.error('[handleConfirmAndSave] missing sessionId, enrichedPlan, or plannerSessionId')
       return
     }
 
     setPageState('submitting')
-    console.log('[handleConfirmAndSave] calling saveCurriculumFromPlan...')
-    const result = await saveCurriculumFromPlan(sessionId, enrichedPlan)
-    console.log('[handleConfirmAndSave] result:', result)
 
-    if (result.error) {
-      setError(result.error)
+    // POST directly to remote Planner API from client
+    try {
+      const bodyData = {
+        id: plannerSessionId,
+        course_title: draft?.title || '',
+        one_liner: draft?.oneLiner || '',
+        github_url: '',
+        epics: enrichedPlan.epics,
+        sources: [],
+      }
+      console.log('[handleConfirmAndSave] POST body size:', JSON.stringify(bodyData).length, 'bytes')
+      console.log('[handleConfirmAndSave] POSTing to Planner API...')
+      const plannerResponse = await fetch('https://planner.omakasem.com/v1/plans', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(bodyData),
+      })
+
+      if (!plannerResponse.ok) {
+        const errorText = await plannerResponse.text()
+        throw new Error(`Planner API failed: ${plannerResponse.status} - ${errorText}`)
+      }
+
+      const plannerData = await plannerResponse.json()
+      const planId = plannerData.id
+      console.log('[handleConfirmAndSave] Planner API success, planId:', planId)
+
+      // Save to MongoDB via server action
+      console.log('[handleConfirmAndSave] calling saveCurriculumFromPlan for MongoDB...')
+      const result = await saveCurriculumFromPlan(sessionId, enrichedPlan)
+      console.log('[handleConfirmAndSave] MongoDB result:', result)
+
+      if (result.error) {
+        setError(result.error)
+        setPageState('error')
+      } else {
+        router.push('/dashboard')
+      }
+    } catch (err) {
+      console.error('[handleConfirmAndSave] error:', err)
+      setError('플랜 저장에 실패했습니다')
       setPageState('error')
-    } else if (result.planId) {
-      router.push(`/complete?planId=${result.planId}`)
     }
   }
 
@@ -185,9 +219,15 @@ function LoadingContent() {
       )}
 
       {pageState === 'submitting' && (
-        <div className="flex flex-col items-center gap-4 py-8">
-          <Loader2 className="h-8 w-8 animate-spin text-zinc-500" />
-          <p className="text-sm text-zinc-500">처리 중...</p>
+        <div className="flex flex-col items-center gap-6 py-12">
+          <div className="relative">
+            <div className="h-16 w-16 rounded-full border-4 border-zinc-200 dark:border-neutral-700" />
+            <div className="absolute inset-0 h-16 w-16 animate-spin rounded-full border-4 border-transparent border-t-zinc-900 dark:border-t-white" />
+          </div>
+          <div className="text-center">
+            <p className="text-lg font-medium text-zinc-900 dark:text-white">커리큘럼 업로드 중...</p>
+            <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">잠시만 기다려주세요</p>
+          </div>
         </div>
       )}
 
@@ -221,8 +261,8 @@ function LoadingContent() {
             <div className="flex items-center gap-3">
               <CheckCircle className="h-6 w-6 text-green-500" />
               <div>
-                <p className="font-medium text-green-800 dark:text-green-300">{enrichedPlan.title}</p>
-                <p className="text-sm text-green-600 dark:text-green-400">{enrichedPlan.oneLiner}</p>
+                <p className="font-medium text-green-800 dark:text-green-300">{enrichedPlan.course_title}</p>
+                <p className="text-sm text-green-600 dark:text-green-400">{enrichedPlan.one_liner}</p>
               </div>
             </div>
           </div>

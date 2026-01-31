@@ -145,71 +145,78 @@ export function FeedbackLayout({ taskTitle, repoUrl, branch = 'main', suggestion
 
   return (
     <div className="flex h-full w-full flex-col gap-4 lg:flex-row">
-      <div className="relative flex w-full shrink-0 flex-col rounded-2xl bg-[rgba(255,255,255,0.72)] shadow-[0px_0px_24px_0px_rgba(22,22,22,0.06)] lg:w-[400px] dark:bg-[rgba(255,255,255,0.04)]">
-        <div className="flex flex-row items-center gap-2.5 self-stretch p-5">
-          <div className="flex flex-row items-center gap-2">
-            <div className="relative size-6">
-              <Image src="/icons/ts-logo.svg" alt="" fill className="object-contain" />
+      <div className="relative flex w-full shrink-0 flex-col overflow-hidden rounded-2xl bg-[rgba(255,255,255,0.72)] shadow-[0px_0px_24px_0px_rgba(22,22,22,0.06)] lg:w-[400px] dark:bg-[rgba(255,255,255,0.04)]">
+        <div className="flex flex-1 flex-col overflow-y-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="sticky top-0 z-10 flex flex-row items-center gap-2.5 self-stretch bg-[rgba(255,255,255,0.72)] p-5 backdrop-blur-sm dark:bg-[rgba(30,30,30,0.95)]">
+            <div className="flex flex-row items-center gap-2">
+              <div className="relative size-6">
+                <Image src="/icons/ts-logo.svg" alt="" fill className="object-contain" />
+              </div>
+              <span className="font-pretendard text-base leading-[1.5] font-normal tracking-[-0.02em] text-[rgba(22,22,22,0.72)] dark:text-[rgba(245,245,245,0.72)]">
+                {taskTitle}
+              </span>
             </div>
-            <span className="font-pretendard text-base leading-[1.5] font-normal tracking-[-0.02em] text-[rgba(22,22,22,0.72)] dark:text-[rgba(245,245,245,0.72)]">
-              {taskTitle}
-            </span>
+            <Image
+              src="/icons/arrow-forward.svg"
+              alt=""
+              width={16}
+              height={16}
+              className="opacity-[0.72] invert dark:invert-0"
+            />
+            <div className="flex flex-row items-center gap-2">
+              <Image src="/icons/wand-shine.svg" alt="" width={24} height={24} className="invert dark:invert-0" />
+              <span className="font-pretendard text-base leading-[1.5] font-medium tracking-[-0.02em] text-[#161616] dark:text-[#F5F5F5]">
+                채점 후 피드백
+              </span>
+            </div>
           </div>
-          <Image
-            src="/icons/arrow-forward.svg"
-            alt=""
-            width={16}
-            height={16}
-            className="opacity-[0.72] invert dark:invert-0"
-          />
-          <div className="flex flex-row items-center gap-2">
-            <Image src="/icons/wand-shine.svg" alt="" width={24} height={24} className="invert dark:invert-0" />
-            <span className="font-pretendard text-base leading-[1.5] font-medium tracking-[-0.02em] text-[#161616] dark:text-[#F5F5F5]">
-              채점 후 피드백
-            </span>
+
+          <div className="flex flex-1 flex-col gap-10 px-5 pt-2 pb-24">
+            {highPriority.length > 0 && (
+              <FeedbackSection
+                title="우선순위 높은 피드백"
+                suggestions={highPriority}
+                selectedIndex={selectedIndex}
+                startIndex={0}
+                onSelect={setSelectedIndex}
+                highlightFirst={selectedIndex === null}
+              />
+            )}
+
+            {mediumPriority.length > 0 && (
+              <FeedbackSection
+                title="우선순위 중간 피드백"
+                suggestions={mediumPriority}
+                selectedIndex={selectedIndex}
+                startIndex={highPriority.length}
+                onSelect={setSelectedIndex}
+              />
+            )}
+
+            {lowPriority.length > 0 && (
+              <FeedbackSection
+                title="우선순위 낮은 피드백"
+                suggestions={lowPriority}
+                selectedIndex={selectedIndex}
+                startIndex={highPriority.length + mediumPriority.length}
+                onSelect={setSelectedIndex}
+              />
+            )}
           </div>
         </div>
 
-        <div className="flex flex-1 flex-col gap-10 overflow-y-auto px-5 pt-2 pb-24 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {highPriority.length > 0 && (
-            <FeedbackSection
-              title="우선순위 높은 피드백"
-              suggestions={highPriority}
-              selectedIndex={selectedIndex}
-              startIndex={0}
-              onSelect={setSelectedIndex}
-              highlightFirst={selectedIndex === null}
-            />
-          )}
-
-          {mediumPriority.length > 0 && (
-            <FeedbackSection
-              title="우선순위 중간 피드백"
-              suggestions={mediumPriority}
-              selectedIndex={selectedIndex}
-              startIndex={highPriority.length}
-              onSelect={setSelectedIndex}
-            />
-          )}
-
-          {lowPriority.length > 0 && (
-            <FeedbackSection
-              title="우선순위 낮은 피드백"
-              suggestions={lowPriority}
-              selectedIndex={selectedIndex}
-              startIndex={highPriority.length + mediumPriority.length}
-              onSelect={setSelectedIndex}
-            />
-          )}
-        </div>
-
-        <div className="absolute bottom-5 left-1/2 z-10 flex -translate-x-1/2 flex-row items-center gap-1 rounded-full border border-[rgba(164,164,164,0.2)] bg-white p-1 shadow-[0px_0px_24px_0px_rgba(22,22,22,0.06)] backdrop-blur-[16px] dark:bg-[#161616] w-[220px]">
+        <div className="absolute bottom-5 left-1/2 z-10 flex w-[220px] -translate-x-1/2 flex-row items-center gap-1 rounded-full border border-[rgba(164,164,164,0.2)] bg-white p-1 shadow-[0px_0px_24px_0px_rgba(22,22,22,0.06)] backdrop-blur-[16px] dark:bg-[#161616]">
           <button
             onClick={onClose}
             className="flex flex-1 flex-row items-center justify-center gap-1.5 rounded-full bg-[#161616] px-[12px] py-3 dark:bg-[#F5F5F5]"
           >
-            <Image src="/icons/close.svg" alt="" width={20} height={20} className="invert dark:invert-0" 
-            style={{ height: 12, width: 12, maxWidth: 12, maxHeight: 12 }}
+            <Image
+              src="/icons/close.svg"
+              alt=""
+              width={20}
+              height={20}
+              className="invert dark:invert-0"
+              style={{ height: 12, width: 12, maxWidth: 12, maxHeight: 12 }}
             />
             <span className="font-pretendard text-sm leading-[1.45] font-medium tracking-[-0.02em] whitespace-nowrap text-[#F5F5F5] dark:text-[#161616]">
               피드백 종료

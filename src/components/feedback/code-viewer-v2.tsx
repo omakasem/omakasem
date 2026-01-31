@@ -238,83 +238,85 @@ export function CodeViewerV2({ repoUrl, file, highlightLine, branch = 'main', to
   const lines = content?.split('\n') || []
 
   return (
-    <div className="flex h-full flex-col self-stretch rounded-2xl bg-white shadow-[0px_0px_24px_0px_rgba(22,22,22,0.06)] dark:bg-[rgba(255,255,255,0.04)]">
-      <div className="flex flex-row items-center gap-2 self-stretch p-5">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-          <path
-            d="M8 6L4 12L8 18"
-            className="stroke-[#161616] dark:stroke-[#F5F5F5]"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-          <path
-            d="M16 6L20 12L16 18"
-            className="stroke-[#161616] dark:stroke-[#F5F5F5]"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-        <span className="flex-1 text-base leading-[1.5] font-medium tracking-[-0.02em] text-[#161616] dark:text-[#F5F5F5]">
-          {file || '파일을 선택하세요'}
-        </span>
-      </div>
+    <div className="flex h-full flex-col self-stretch overflow-hidden rounded-2xl bg-white shadow-[0px_0px_24px_0px_rgba(22,22,22,0.06)] dark:bg-[rgba(255,255,255,0.04)]">
+      <div className="relative flex-1 overflow-auto">
+        <div className="sticky top-0 z-10 flex flex-row items-center gap-2 self-stretch bg-white p-5 backdrop-blur-sm dark:bg-[rgba(30,30,30,0.95)]">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <path
+              d="M8 6L4 12L8 18"
+              className="stroke-[#161616] dark:stroke-[#F5F5F5]"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+            <path
+              d="M16 6L20 12L16 18"
+              className="stroke-[#161616] dark:stroke-[#F5F5F5]"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+          <span className="flex-1 text-base leading-[1.5] font-medium tracking-[-0.02em] text-[#161616] dark:text-[#F5F5F5]">
+            {file || '파일을 선택하세요'}
+          </span>
+        </div>
 
-      <div className="relative flex-1 overflow-auto px-5 pt-2 pb-5">
-        {!file && (
-          <div className="flex h-full items-center justify-center">
-            <p className="text-[rgba(22,22,22,0.56)] dark:text-[rgba(245,245,245,0.56)]">
-              피드백을 클릭하여 코드를 확인하세요
-            </p>
-          </div>
-        )}
-
-        {loading && (
-          <div className="flex h-full items-center justify-center">
-            <p className="text-[rgba(22,22,22,0.56)] dark:text-[rgba(245,245,245,0.56)]">로딩 중...</p>
-          </div>
-        )}
-
-        {error && (
-          <div className="flex h-full items-center justify-center">
-            <p className="text-[#E06C75]">{error}</p>
-          </div>
-        )}
-
-        {file && !loading && !error && content && (
-          <div className="flex gap-4">
-            <div className="w-[22px] shrink-0 text-right font-mono text-sm leading-[1.45] font-medium tracking-[-0.02em] text-[rgba(22,22,22,0.56)] select-none dark:text-[rgba(245,245,245,0.56)]">
-              {lines.map((_, i) => (
-                <div key={i + 1}>{i + 1}</div>
-              ))}
+        <div className="px-5 pt-2 pb-5">
+          {!file && (
+            <div className="flex h-full items-center justify-center">
+              <p className="text-[rgba(22,22,22,0.56)] dark:text-[rgba(245,245,245,0.56)]">
+                피드백을 클릭하여 코드를 확인하세요
+              </p>
             </div>
-            <pre className="m-0 flex-1 font-mono text-sm leading-[1.45] font-medium tracking-[-0.02em] break-all whitespace-pre-wrap">
-              <code>
-                {lines.map((line, i) => {
-                  const lineNum = i + 1
-                  const isHighlighted = highlightLine === lineNum
+          )}
 
-                  return (
-                    <div
-                      key={lineNum}
-                      className={`relative ${isHighlighted ? 'bg-[rgba(166,38,164,0.1)] dark:bg-[rgba(224,108,117,0.15)]' : ''}`}
-                    >
-                      <HighlightedLine line={line || ' '} isDark={isDark} />
-                      {tooltip && tooltip.line === lineNum && (
-                        <div className="absolute top-full left-0 z-10 mt-1 max-w-[420px] rounded-full border border-[rgba(164,164,164,0.72)] bg-white px-3.5 py-3 shadow-[0px_0px_24px_0px_rgba(22,22,22,0.06)] backdrop-blur-[16px] dark:bg-[#161616]">
-                          <span className="text-sm leading-[1.45] font-medium tracking-[-0.02em] text-[#161616] dark:text-[#F5F5F5]">
-                            {tooltip.message}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  )
-                })}
-              </code>
-            </pre>
-          </div>
-        )}
+          {loading && (
+            <div className="flex h-full items-center justify-center">
+              <p className="text-[rgba(22,22,22,0.56)] dark:text-[rgba(245,245,245,0.56)]">로딩 중...</p>
+            </div>
+          )}
+
+          {error && (
+            <div className="flex h-full items-center justify-center">
+              <p className="text-[#E06C75]">{error}</p>
+            </div>
+          )}
+
+          {file && !loading && !error && content && (
+            <div className="flex gap-4">
+              <div className="w-[22px] shrink-0 text-right font-mono text-sm leading-[1.45] font-medium tracking-[-0.02em] text-[rgba(22,22,22,0.56)] select-none dark:text-[rgba(245,245,245,0.56)]">
+                {lines.map((_, i) => (
+                  <div key={i + 1}>{i + 1}</div>
+                ))}
+              </div>
+              <pre className="m-0 flex-1 font-mono text-sm leading-[1.45] font-medium tracking-[-0.02em] break-all whitespace-pre-wrap">
+                <code>
+                  {lines.map((line, i) => {
+                    const lineNum = i + 1
+                    const isHighlighted = highlightLine === lineNum
+
+                    return (
+                      <div
+                        key={lineNum}
+                        className={`relative ${isHighlighted ? 'bg-[rgba(166,38,164,0.1)] dark:bg-[rgba(224,108,117,0.15)]' : ''}`}
+                      >
+                        <HighlightedLine line={line || ' '} isDark={isDark} />
+                        {tooltip && tooltip.line === lineNum && (
+                          <div className="absolute top-full left-0 z-10 mt-1 max-w-[420px] rounded-full border border-[rgba(164,164,164,0.72)] bg-white px-3.5 py-3 shadow-[0px_0px_24px_0px_rgba(22,22,22,0.06)] backdrop-blur-[16px] dark:bg-[#161616]">
+                            <span className="text-sm leading-[1.45] font-medium tracking-[-0.02em] text-[#161616] dark:text-[#F5F5F5]">
+                              {tooltip.message}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
+                </code>
+              </pre>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )

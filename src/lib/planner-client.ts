@@ -144,12 +144,13 @@ export class PlannerClient {
 
   /**
    * Save enriched plan to Planner API
+   * Returns the plan ID from the API response
    */
   async savePlan(
     plannerSessionId: string,
     plan: CoursePlan,
     githubUrl?: string
-  ): Promise<{ planId: string }> {
+  ): Promise<{ id: string }> {
     const response = await fetch(`${this.baseUrl}/v1/plans`, {
       method: 'POST',
       headers: {
@@ -170,7 +171,8 @@ export class PlannerClient {
       throw new Error(`Failed to save plan: ${response.status} - ${errorText}`);
     }
 
-    return response.json();
+    const data = await response.json();
+    return { id: data.id };
   }
 }
 

@@ -1,70 +1,11 @@
 import { ActivityHeatmap, AIRatingBadge, ProgressBar, type Epic, type RatingLevel } from '@/components/dashboard'
 import { MarkdownText } from '@/components/markdown-text'
-import { getActivityData, getCurricula } from '@/lib/curricula'
+import { getActivityData, getCurricula, getCurriculumWithTasks, type CurriculumWithTasks } from '@/lib/curricula'
 import Image from 'next/image'
 import Link from 'next/link'
 import { DashboardClient } from './dashboard-client'
 
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
-
-interface Task {
-  task_id: string
-  curriculum_id: string
-  epic_index: number
-  story_index: number
-  epic_title: string
-  story_title: string
-  title: string
-  description: string
-  status: 'pending' | 'partial' | 'passed' | 'failed'
-  grade_result: {
-    grade: string
-    percentage: number
-    graded_at: string
-  } | null
-}
-
-interface CurriculumResponse {
-  curriculum_id: string
-  course_title: string
-  one_liner: string
-  status: string
-  total_hours: number
-  total_tasks: number
-  completed_tasks: number
-  structure: {
-    epics: {
-      title: string
-      description: string
-      stories: { title: string; description: string }[]
-    }[]
-  }
-  tasks: Task[]
-  progress: number
-  weekly_summary: string
-}
-
-async function fetchCurriculumFromAPI(id: string): Promise<CurriculumResponse | null> {
-  try {
-    const response = await fetch(`${BASE_URL}/api/curricula/${id}`, {
-      headers: { 'Content-Type': 'application/json' },
-      cache: 'no-store',
-    })
-
-    if (!response.ok) {
-      console.error('Failed to fetch curriculum:', response.status)
-      return null
-    }
-
-    const curriculum: CurriculumResponse = await response.json()
-    return curriculum
-  } catch (error) {
-    console.error('Error fetching curriculum from API:', error)
-    return null
-  }
-}
-
-function transformToEpics(structure: CurriculumResponse['structure'] | undefined): Epic[] {
+function transformToEpics(structure: CurriculumWithTasks['structure'] | undefined): Epic[] {
   if (!structure?.epics) return []
   return structure.epics.map((epic, index) => ({
     id: String(index + 1),
@@ -72,7 +13,7 @@ function transformToEpics(structure: CurriculumResponse['structure'] | undefined
   }))
 }
 
-function serializeTaskForClient(task: Task) {
+function serializeTaskForClient(task: CurriculumWithTasks['tasks'][number]) {
   return {
     _id: task.task_id,
     title: task.title,
@@ -148,7 +89,7 @@ export default async function DashboardPage({ searchParams }: PageProps) {
     )
   }
 
-  const curriculum = targetCurriculumId ? await fetchCurriculumFromAPI(targetCurriculumId) : null
+  const curriculum = targetCurriculumId ? await getCurriculumWithTasks(targetCurriculumId) : null
 
   if (!curriculum) {
     return (
