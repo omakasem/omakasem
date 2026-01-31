@@ -2,7 +2,7 @@
   "lockfileVersion": 1,
   "workspaces": {
     "": {
-      "name": "vibestudy",
+      "name": "omakasem",
       "dependencies": {
         "@base-ui/react": "^1.1.0",
         "@hugeicons/core-free-icons": "^3.1.1",
