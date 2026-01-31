@@ -29,7 +29,7 @@ export default function RootLayout({
 }>) {
   return (
     <ClerkProvider>
-      <html lang="ko" className={`${inter.variable} h-full`}>
+      <html lang="ko" className={`${inter.variable} h-full dark`}>
         <body
           className={`${geistSans.variable} ${geistMono.variable} antialiased flex h-full flex-col`}
         >
