@@ -23,6 +23,13 @@ interface EnrichmentStreamingProps {
   onError: (error: string) => void
 }
 
+const LOADING_MESSAGES = [
+  '학습 목표 분석 중...',
+  '실습 과제 설계 중...',
+  '평가 기준 수립 중...',
+  '상세 일정 계획 중...',
+]
+
 export function EnrichmentStreaming({ plannerSessionId, onComplete, onError }: EnrichmentStreamingProps) {
   const [isConnected, setIsConnected] = useState(false)
   const [currentPhase, setCurrentPhase] = useState<string>('')
@@ -30,8 +37,20 @@ export function EnrichmentStreaming({ plannerSessionId, onComplete, onError }: E
   const [epics, setEpics] = useState<StreamingEpic[]>([])
   const [currentEpicId, setCurrentEpicId] = useState<number | null>(null)
   const [expandedStories, setExpandedStories] = useState<Set<string>>(new Set())
+  const [loadingMessageIndex, setLoadingMessageIndex] = useState(0)
   const hasStartedRef = useRef(false)
   const epicContentRef = useRef<Map<number, string>>(new Map())
+
+  // Rotate loading messages before first epic
+  useEffect(() => {
+    if (epics.length > 0) return
+
+    const interval = setInterval(() => {
+      setLoadingMessageIndex(prev => (prev + 1) % LOADING_MESSAGES.length)
+    }, 2000)
+
+    return () => clearInterval(interval)
+  }, [epics.length])
 
   useEffect(() => {
     if (hasStartedRef.current) return
@@ -281,7 +300,22 @@ export function EnrichmentStreaming({ plannerSessionId, onComplete, onError }: E
 
       {/* Epic blocks with streaming stories */}
       <div className="min-h-32 space-y-3">
-        {epics.map((epic) => {
+        {epics.length === 0 ? (
+          <div className="flex items-center gap-3 rounded-xl bg-zinc-100 p-4 dark:bg-neutral-800">
+            <div className="flex items-center gap-1">
+              <span className="inline-block h-2 w-2 animate-bounce rounded-full bg-zinc-400" style={{ animationDelay: '0ms' }} />
+              <span className="inline-block h-2 w-2 animate-bounce rounded-full bg-zinc-400" style={{ animationDelay: '150ms' }} />
+              <span className="inline-block h-2 w-2 animate-bounce rounded-full bg-zinc-400" style={{ animationDelay: '300ms' }} />
+            </div>
+            <span
+              key={loadingMessageIndex}
+              className="text-sm text-zinc-600 dark:text-zinc-300"
+              style={{ animation: 'fadeIn 0.3s ease-in-out' }}
+            >
+              {LOADING_MESSAGES[loadingMessageIndex]}
+            </span>
+          </div>
+        ) : epics.map((epic) => {
           const isActive = currentEpicId === epic.id
 
           return (
