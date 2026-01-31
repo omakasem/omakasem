@@ -33,7 +33,13 @@ function serializeTaskForClient(task: TaskDocument) {
     status: task.status,
     epic_index: task.epic_index,
     story_index: task.story_index,
-    grade_result: task.grade_result,
+    grade_result: task.grade_result
+      ? {
+          grade: task.grade_result.grade,
+          percentage: task.grade_result.percentage,
+          graded_at: task.grade_result.graded_at,
+        }
+      : null,
   }
 }
 

@@ -5,8 +5,6 @@ import { Badge } from '@/components/badge'
 import { Button } from '@/components/button'
 import { Input, InputGroup } from '@/components/input'
 import { ArrowRightStartOnRectangleIcon, MagnifyingGlassIcon, PlusIcon, XMarkIcon } from '@heroicons/react/16/solid'
-import { CodeIcon } from '@hugeicons/core-free-icons'
-import { HugeiconsIcon } from '@hugeicons/react'
 import clsx from 'clsx'
 import NextImage from 'next/image'
 
@@ -57,14 +55,13 @@ export function CurriculumSidebar({
 }: CurriculumSidebarProps) {
   return (
     <div className="flex h-full flex-col bg-white dark:bg-zinc-900">
-      {/* Logo */}
       <div className="p-4">
         <div className="flex items-center gap-2">
-          <HugeiconsIcon icon={CodeIcon} size={28} className="text-zinc-950 dark:text-white" />
+          <NextImage src="/light.svg" alt="" width={28} height={28} className="dark:hidden" />
+          <NextImage src="/dark.svg" alt="" width={28} height={28} className="hidden dark:block" />
         </div>
       </div>
 
-      {/* Search */}
       <div className="px-4 pb-2">
         <InputGroup>
           <MagnifyingGlassIcon data-slot="icon" className="text-zinc-500" />
@@ -73,14 +70,12 @@ export function CurriculumSidebar({
         </InputGroup>
       </div>
 
-      {/* New Journey Button */}
       <div className="px-4 py-2">
         <Button href="/onboarding" outline className="w-full justify-center">
           <PlusIcon className="size-4" />새 빌더 여정
         </Button>
       </div>
 
-      {/* Curriculum List */}
       <div className="flex-1 overflow-y-auto px-4 py-2">
         <h3 className="mb-2 text-xs font-medium text-zinc-500">빌더 여정들</h3>
         <div className="space-y-1">
@@ -114,7 +109,6 @@ export function CurriculumSidebar({
         </div>
       </div>
 
-      {/* User Profile */}
       {user && (
         <div className="border-t border-zinc-200 p-4 dark:border-zinc-800">
           <div className="flex items-center justify-between">

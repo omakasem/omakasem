@@ -1,8 +1,7 @@
 'use client'
 
 import { Button } from '@/components/button'
-// TODO: FeedbackPanel was removed, this page needs to be updated
-// import { FeedbackPanel } from '@/components/feedback'
+import { FeedbackPanelV2 } from '@/components/feedback'
 import { Heading } from '@/components/heading'
 import { Input } from '@/components/input'
 import { useSearchParams } from 'next/navigation'
@@ -60,14 +59,7 @@ function ReviewTestContent() {
           </div>
         )}
 
-        {submitted && (
-          <div className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-800">
-            <p className="text-zinc-500">FeedbackPanel component needs to be reimplemented</p>
-            <p className="text-sm text-zinc-400">
-              Repo: {repoUrl}, Branch: {branch}
-            </p>
-          </div>
-        )}
+        {submitted && <FeedbackPanelV2 taskTitle={`Review: ${repoUrl}`} suggestions={[]} />}
       </div>
     </div>
   )
