@@ -1,7 +1,9 @@
+import { serverEnv } from "../lib/env";
+
 export default {
   providers: [
     {
-      domain: process.env.CLERK_JWT_ISSUER_DOMAIN,
+      domain: serverEnv.CLERK_JWT_ISSUER_DOMAIN,
       applicationID: "convex",
     },
   ],
