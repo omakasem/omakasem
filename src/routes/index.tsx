@@ -6,9 +6,16 @@ import {
   UserButton,
 } from '@clerk/tanstack-react-start'
 import { createFileRoute } from '@tanstack/react-router'
-import { ComponentExample } from '@/components/component-example'
+import { convexQuery } from '@convex-dev/react-query'
+import { useSuspenseQuery } from '@tanstack/react-query'
+import { api } from '../../convex/_generated/api'
 
-export const Route = createFileRoute('/')({ component: App })
+export const Route = createFileRoute('/')({
+  loader: async ({ context }) => {
+    await context.queryClient.ensureQueryData(convexQuery(api.tasks.get, {}))
+  },
+  component: App,
+})
 
 function App() {
   return (
@@ -18,7 +25,7 @@ function App() {
           <UserButton />
           <span>You are signed in</span>
         </div>
-        <ComponentExample />
+        <TaskList />
       </SignedIn>
       <SignedOut>
         <div className="flex flex-col items-center justify-center min-h-screen gap-4">
@@ -44,6 +51,30 @@ function App() {
           </div>
         </div>
       </SignedOut>
+    </div>
+  )
+}
+
+function TaskList() {
+  const { data: tasks } = useSuspenseQuery(convexQuery(api.tasks.get, {}))
+
+  return (
+    <div className="p-4">
+      <h2 className="text-xl font-semibold mb-4">Tasks</h2>
+      {tasks.length === 0 ? (
+        <p className="text-muted-foreground">No tasks yet</p>
+      ) : (
+        <ul className="space-y-2">
+          {tasks.map((task) => (
+            <li
+              key={task._id}
+              className={`p-2 rounded border ${task.isCompleted ? 'line-through text-muted-foreground' : ''}`}
+            >
+              {task.text}
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   )
 }
