@@ -1,3 +1,5 @@
+USE BUN
+
 # AGENTS.MD - Omakasem Implementation Findings
 
 **Last Updated**: 2026-02-01 01:10 UTC
@@ -259,7 +261,7 @@ rm -f playwright-screenshots/*.png
 
 - [x] Onboarding Layout + Progress Steps (with light/dark mode)
 - [ ] Onboarding Form Page (4 inputs, Korean labels, validation)
-- [ ] Loading Page (flag icon, "빌더 여정 설계 중..." text)
+- [x] Loading Page (flag icon, "빌더 여정 설계 중..." text)
 - [ ] Dashboard Sidebar (search, course list, profile)
 - [ ] Activity Heatmap (GitHub-style 22x5 grid)
 - [ ] Epic Navigation (horizontal tabs with scroll)
