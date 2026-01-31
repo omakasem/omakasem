@@ -28,11 +28,24 @@ function transformToEpics(
   }))
 }
 
+function mapTaskStatus(dbStatus: TaskDocument['status']): Task['status'] {
+  switch (dbStatus) {
+    case 'passed':
+      return 'completed'
+    case 'partial':
+      return 'in_progress'
+    case 'failed':
+    case 'pending':
+    default:
+      return 'pending'
+  }
+}
+
 function transformTaskToUI(task: TaskDocument): Task {
   return {
     id: task._id.toString(),
     title: task.title,
-    status: task.status,
+    status: mapTaskStatus(task.status),
     grade: task.grade_result?.grade,
     score: task.grade_result?.percentage,
   }

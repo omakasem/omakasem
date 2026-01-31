@@ -169,7 +169,6 @@ export async function getActivityData(days: number = 154): Promise<ActivityData[
         $or: [
           { clerk_user_id: userId },
           { clerk_user_id: { $exists: false } },
-          { clerk_user_id: null },
         ],
         date: { $gte: startDateStr },
       })
