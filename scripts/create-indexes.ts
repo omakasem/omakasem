@@ -2,7 +2,8 @@
  * Usage: bun run scripts/create-indexes.ts
  */
 
-import { Collection, Db, IndexDescription, MongoClient } from 'mongodb'
+import type { Collection, CreateIndexesOptions, Db, IndexSpecification } from 'mongodb'
+import { MongoClient } from 'mongodb'
 
 const MONGODB_URI = process.env.MONGODB_URI || process.env.MONGODB_URL
 
@@ -13,30 +14,43 @@ if (!MONGODB_URI) {
 
 const DB_NAME = process.env.MONGODB_DATABASE || 'omakasem'
 
-async function createIndexSafe(collection: Collection, index: IndexDescription): Promise<boolean> {
+interface IndexDef {
+  key: IndexSpecification
+  name: string
+  sparse?: boolean
+  unique?: boolean
+}
+
+async function createIndexSafe(collection: Collection, index: IndexDef): Promise<boolean> {
   try {
-    await collection.createIndex(index.key, {
-      name: index.name,
-      background: true,
-      sparse: index.sparse,
-      unique: index.unique,
-    })
+    const options: CreateIndexesOptions = { name: index.name, background: true }
+    if (index.sparse) options.sparse = true
+    if (index.unique) options.unique = true
+
+    await collection.createIndex(index.key, options)
     console.log(`   ✅ ${index.name}`)
     return true
   } catch (error: unknown) {
-    const mongoError = error as { code?: number; codeName?: string }
-    if (mongoError.code === 85) {
+    const mongoError = error as { code?: number }
+    if (mongoError.code === 85 || mongoError.code === 86) {
       console.log(`   ⏭️  ${index.name} (equivalent index exists)`)
       return true
     }
-    console.error(`   ❌ ${index.name}: ${mongoError}`)
+    console.error(`   ❌ ${index.name}: ${error}`)
     return false
   }
 }
 
-async function createCollectionIndexes(db: Db, collName: string, indexes: IndexDescription[]): Promise<void> {
+async function createCollectionIndexes(db: Db, collName: string, indexes: IndexDef[]): Promise<void> {
   console.log(`\n📦 ${collName}:`)
   const collection = db.collection(collName)
+
+  const collections = await db.listCollections({ name: collName }).toArray()
+  if (collections.length === 0) {
+    console.log(`   ⚠️  Collection does not exist yet (will be created on first insert)`)
+    return
+  }
+
   for (const index of indexes) {
     await createIndexSafe(collection, index)
   }
@@ -73,6 +87,11 @@ async function createIndexes() {
 
     console.log('\n📋 Current indexes:')
     for (const collName of ['curricula', 'tasks', 'activities', 'sessions']) {
+      const collections = await db.listCollections({ name: collName }).toArray()
+      if (collections.length === 0) {
+        console.log(`\n${collName}: (not created yet)`)
+        continue
+      }
       const indexes = await db.collection(collName).indexes()
       console.log(`\n${collName}:`)
       for (const idx of indexes) {
