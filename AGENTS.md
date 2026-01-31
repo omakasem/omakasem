@@ -222,6 +222,7 @@ rm -f playwright-screenshots/*.png
 - Multiple sub-tasks in one prompt (agents refuse)
 - Trusting agent completion claims without visual verification
 - Skipping Playwright verification for UI components
+- **USING CURL FOR VISUAL VERIFICATION** - This is completely unacceptable. ONLY Playwright screenshots count as verification.
 - Category "ultrabrain" sometimes returns empty output
 - Batching multiple file operations
 
