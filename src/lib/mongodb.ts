@@ -1,11 +1,5 @@
 import { Db, MongoClient } from 'mongodb'
 
-const MONGODB_URI = process.env.MONGODB_URI
-
-if (!MONGODB_URI) {
-  throw new Error('Please define the MONGODB_URI environment variable inside .env.local')
-}
-
 interface MongoClientCache {
   client: MongoClient | null
   promise: Promise<MongoClient> | null
@@ -30,10 +24,15 @@ export async function connectToDatabase(): Promise<{ client: MongoClient; db: Db
     return { client: cached.client, db: cached.client.db() }
   }
 
+  const MONGODB_URI = process.env.MONGODB_URI
+  if (!MONGODB_URI) {
+    throw new Error('Please define the MONGODB_URI environment variable')
+  }
+
   if (!cached.promise) {
     const options = {}
 
-    cached.promise = MongoClient.connect(MONGODB_URI!, options).then((client) => {
+    cached.promise = MongoClient.connect(MONGODB_URI, options).then((client) => {
       cached.client = client
       return client
     })
