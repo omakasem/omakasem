@@ -118,6 +118,8 @@ export async function getCurriculumById(id: string): Promise<CurriculumDetail | 
       title: doc.course_title,
       one_liner: doc.one_liner,
       icon: doc.icon,
+      icon_id: doc.icon_id,
+      git_repo: doc.git_repo,
       progress: doc.total_tasks > 0 ? Math.round((doc.completed_tasks / doc.total_tasks) * 100) : 0,
       status: doc.status,
       total_hours: doc.total_hours,
