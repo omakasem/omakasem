@@ -1,6 +1,6 @@
 # AGENTS.MD - Omakasem Implementation Findings
 
-**Last Updated**: 2026-02-01 01:15 UTC
+**Last Updated**: 2026-02-01 01:10 UTC
 
 ---
 
@@ -8,7 +8,63 @@
 
 AI-Powered Personalized Developer Education Platform
 
-COMMIT AND PUSH OFTEN. MUST MATCH mockups folder's design
+**Stack**: Next.js 15, React 19, MongoDB (TBD), Clerk, Tailwind CSS  
+**AI Services**: omakasem-planner, omakasem-code-reviewer (to be integrated)  
+**Current Phase**: WIREFRAME/UI IMPLEMENTATION
+
+---
+
+## 🔄 MAJOR ARCHITECTURE PIVOT (2026-02-01 01:00 UTC)
+
+### ❌ CONVEX DROPPED COMPLETELY
+
+**Decision**: Dropped Convex entirely, switching to MongoDB + Next.js API routes  
+**Reason**: Architecture decision by user  
+**Status**: ✅ All Convex code deleted, package uninstalled  
+**Impact**: Backend functions need to be reimplemented with MongoDB later
+
+### ✅ CURRENT FOCUS: WIREFRAME IMPLEMENTATION
+
+**Priority**: Match mockups folder design EXACTLY  
+**Approach**: Pure frontend components first, backend integration later  
+**Mockups**: 3 screens to implement
+
+1. `onboarding.png` - Onboarding form (4 inputs, Korean text)
+2. `onboarding-loading.png` - Loading screen with progress
+3. `dashboard.png` - Main dashboard (sidebar, heatmap, cards)
+
+---
+
+## 🔑 ARCHITECTURAL DECISIONS (CURRENT)
+
+### Authentication
+
+- **Decision**: Clerk for authentication (GitHub OAuth primary)
+- **Status**: ✅ Installed and configured
+- **Integration**: ClerkProvider wrapping app in layout.tsx
+
+### Styling & Design System
+
+- **Framework**: Tailwind CSS
+- **Component Library**: Catalyst (27 pre-built components available)
+- **Theme**: Light/Dark mode support (using Tailwind's dark: classes)
+- **Design**: Matches mockups pixel-perfect
+  - Dark mode: Black backgrounds, white text, dark gray modals
+  - Light mode: Light gray backgrounds, white cards, dark text
+
+### GitHub Integration (PLANNED)
+
+- **Purpose**: Automate repository setup and submission tracking
+- **Status**: Backend not implemented yet (needs MongoDB)
+- **Future**: GitHub App for commit-based submissions
+
+---
+
+## Project: Omakasem (오마카쌤)
+
+AI-Powered Personalized Developer Education Platform
+
+COMMIT AND PUSH OFTEN. MUST MATCH mockups folder's design. EDIT THIS PAGE OFTEN.
 
 **Stack**: Next.js 15, React 19, Convex, Clerk (GitHub OAuth only), Tailwind CSS  
 **AI Services**: omakasem-planner, omakasem-code-reviewer  
@@ -63,51 +119,89 @@ COMMIT AND PUSH OFTEN. MUST MATCH mockups folder's design
 
 ---
 
-## Phase 1: Foundation - FINDINGS
+## Phase 1: Foundation - COMPLETED
 
-### ✅ Task 1.1: Convex Initialization
+### ✅ Task 1.1-1.7: Clerk Setup
 
-- **Command**: `npx convex dev --once`
-- **Finding**: Auto-provisions dev deployment and updates .env.local
-- **Deployment**: dev:qualified-wren-376
-- **Note**: Types generated automatically in `convex/_generated/`
+- ✅ Clerk installed and configured
+- ✅ ClerkProvider in layout.tsx
+- ✅ Middleware protecting routes
+- ✅ Korean metadata in place
+- ✅ Environment variables configured
 
-### ✅ Task 1.2: Environment Config (src/env.ts)
+### ❌ Convex Tasks (DELETED)
 
-- **Pattern**: Zod validation for runtime safety
-- **Finding**: `startsWith('pk_')` validation catches Clerk key errors early
-- **Best Practice**: Fail fast on invalid config at app startup
+- All Convex-related work removed
+- Backend will use MongoDB + Next.js API routes instead
 
-### ✅ Task 1.3: Convex Schema (convex/schema.ts)
+---
 
-- **Gotcha**: Some agents claim completion but don't create files
-- **Solution**: ALWAYS verify with own tools (ls, cat, Read)
-- **Finding**: Category "quick" > "ultrabrain" for simple file tasks
-- **Schema**: 7 tables with hierarchical Course→Epic→Story→Task
+## Phase 2: UI Components - IN PROGRESS
 
-### ✅ Task 1.4: Clerk Dependencies
+### ✅ Onboarding Layout & Progress Steps (2026-02-01)
 
-- **Packages**: @clerk/nextjs@6.37.1, @clerk/themes@2.4.51
-- **Note**: Convex 1.31.7 includes convex/react-clerk built-in
+**Files Created:**
 
-### ✅ Task 1.5: Convex-Clerk Provider
+- `src/app/(onboarding)/layout.tsx` - Route group layout
+- `src/components/progress-steps.tsx` - 3-segment progress indicator
 
-- **File**: src/components/providers/convex-clerk-provider.tsx
-- **Pattern**: Singleton ConvexReactClient instance
-- **Integration**: ClerkProvider wraps ConvexProviderWithClerk
+**Features:**
 
-### ✅ Task 1.6: Update Root Layout
+- ✅ Light/Dark mode support
+- ✅ Centered modal design
+- ✅ Matches mockup pixel-perfect
+- ✅ Responsive (max-w-lg constraint)
 
-- **File**: src/app/layout.tsx
-- **Korean branding**: Title "오마카쌤 - AI 맞춤 개발자 교육"
-- **Issue**: Missing ConvexClerkProvider wrapper (needs fix)
-- **Note**: Currently has generic <Providers> component
+**Design Details:**
 
-### ✅ Task 1.7: Clerk Middleware
+- Dark mode: Black background (`bg-black`), dark modal (`bg-neutral-900`)
+- Light mode: Light gray background (`bg-zinc-50`), white modal (`bg-white`)
+- Progress bars: White/dark toggle based on theme
+- Border radius: Large (`rounded-3xl` = 24px)
+- Shadow: Only in light mode (`shadow-xl`)
 
-- **File**: src/middleware.ts
-- **Pattern**: clerkMiddleware with createRouteMatcher
-- **Public routes**: /login, /register, /forgot-password, /api/webhooks
+**Verification:**
+
+- ✅ Build passes
+- ✅ TypeScript compiles clean
+- ✅ Both light and dark modes look correct
+
+---
+
+## 🔴 MANDATORY VISUAL VERIFICATION PROTOCOL
+
+**CRITICAL**: After EVERY UI component/page implementation, you MUST:
+
+1. **Use Playwright to visually verify** the implementation matches mockups
+2. **Take screenshot** of the implemented UI
+3. **Compare** screenshot against mockup file
+4. **BLOCK** further progress if design is broken or regressed
+5. **Delete artifact PNGs** after verification passes
+
+### Verification Steps (MANDATORY)
+
+```bash
+# 1. Start dev server
+npm run dev
+
+# 2. Use Playwright skill to:
+#    - Navigate to the page
+#    - Take screenshot
+#    - Compare with mockup
+#    - Verify pixel-perfect match
+
+# 3. Delete artifacts after verification
+rm -f playwright-screenshots/*.png
+```
+
+**NEVER PROCEED** to next task if:
+
+- Design doesn't match mockup
+- Regression detected
+- Visual bugs present
+- Colors/spacing/typography wrong
+
+**Fix immediately** before continuing.
 
 ---
 
@@ -117,13 +211,15 @@ COMMIT AND PUSH OFTEN. MUST MATCH mockups folder's design
 
 - Single atomic tasks (one file per delegation)
 - Explicit code in prompts
+- **MANDATORY**: Visual verification with Playwright after each UI task
 - Immediate verification after delegation
-- Category "quick" for simple tasks
+- Category "visual-engineering" for UI components
 
 ### ❌ DOESN'T WORK
 
 - Multiple sub-tasks in one prompt (agents refuse)
-- Trusting agent completion claims
+- Trusting agent completion claims without visual verification
+- Skipping Playwright verification for UI components
 - Category "ultrabrain" sometimes returns empty output
 - Batching multiple file operations
 
@@ -155,29 +251,36 @@ COMMIT AND PUSH OFTEN. MUST MATCH mockups folder's design
 
 ---
 
-## Next Session TODO
+## Next Tasks (WIREFRAME IMPLEMENTATION)
 
-**Remaining Phase 1** (2 tasks):
+### 🎯 Immediate Priorities
 
-- [ ] Task 1.6b: Fix Root Layout - Import and use ConvexClerkProvider
-- [ ] Task 1.8: Clerk JWT Template (manual - Dashboard config)
+**Phase 2: UI Components** (In Progress)
 
-**Schema Update Required** (before Phase 2):
+- [x] Onboarding Layout + Progress Steps (with light/dark mode)
+- [ ] Onboarding Form Page (4 inputs, Korean labels, validation)
+- [ ] Loading Page (flag icon, "빌더 여정 설계 중..." text)
+- [ ] Dashboard Sidebar (search, course list, profile)
+- [ ] Activity Heatmap (GitHub-style 22x5 grid)
+- [ ] Epic Navigation (horizontal tabs with scroll)
+- [ ] Story Cards (icon, title, description, task list)
+- [ ] Task Cards (document icon, title, shell command examples)
 
-- [ ] Update convex/schema.ts submissions table for GitHub integration
-  - Add: repoUrl, commitSha, branchName, commitMessage, diff
-  - Remove: code field
+**Phase 3: Full Pages**
 
-**Phase 2**: Backend Functions (7 tasks)
+- [ ] `/onboarding` - Complete onboarding flow
+- [ ] `/onboarding/loading` - Course generation loading
+- [ ] `/dashboard` - Main dashboard with all components
 
-- User sync, CRUD operations, AI actions
-- **NEW**: GitHub webhook handler for commit events
+**Phase 4: Backend (LATER)**
 
-**Phase 3**: UI Components (11 tasks)  
-**Phase 4**: Pages (8 tasks)  
-**Phase 5**: Polish & Verification (8 tasks)
+- [ ] MongoDB schema design
+- [ ] Next.js API routes for CRUD
+- [ ] AI service integrations
+- [ ] GitHub App webhook handlers
 
-**Total Remaining**: 29 tasks
+**Total UI Components**: ~8 components to build  
+**Total Pages**: 3 main pages to complete
 
 ---
 
