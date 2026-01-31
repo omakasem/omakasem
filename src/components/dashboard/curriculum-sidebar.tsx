@@ -5,9 +5,10 @@ import { Badge } from '@/components/badge'
 import { Button } from '@/components/button'
 import { Input, InputGroup } from '@/components/input'
 import { ArrowRightStartOnRectangleIcon, MagnifyingGlassIcon, PlusIcon, XMarkIcon } from '@heroicons/react/16/solid'
-import { BookOpen01Icon, CodeIcon, GridIcon, SourceCodeIcon, SourceCodeSquareIcon } from '@hugeicons/core-free-icons'
+import { CodeIcon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import clsx from 'clsx'
+import NextImage from 'next/image'
 
 export interface Curriculum {
   id: string
@@ -36,11 +37,14 @@ function getProgressColor(progress: number): 'lime' | 'yellow' | 'cyan' | 'zinc'
   return 'zinc'
 }
 
-const curriculumIcons: Record<string, typeof CodeIcon> = {
-  python: SourceCodeIcon,
-  react: GridIcon,
-  nestjs: SourceCodeSquareIcon,
-  default: BookOpen01Icon,
+const curriculumIcons: Record<string, string> = {
+  python: '/icons/python.svg',
+  'react-native': '/icons/react-native.svg',
+  nestjs: '/icons/nestjs.svg',
+  'thread-api': '/icons/thread-api.svg',
+  swiftui: '/icons/swiftui.svg',
+  'claude-agent': '/icons/claude-agent.svg',
+  replit: '/icons/replit.svg',
 }
 
 export function CurriculumSidebar({
@@ -81,7 +85,7 @@ export function CurriculumSidebar({
         <h3 className="mb-2 text-xs font-medium text-zinc-500">빌더 여정들</h3>
         <div className="space-y-1">
           {curricula.map((curriculum) => {
-            const IconComponent = curriculumIcons[curriculum.icon || 'default'] || curriculumIcons.default
+            const iconPath = curriculum.icon ? curriculumIcons[curriculum.icon] : null
             return (
               <button
                 key={curriculum.id}
@@ -94,7 +98,11 @@ export function CurriculumSidebar({
                 )}
               >
                 <div className="flex min-w-0 items-center gap-2">
-                  <HugeiconsIcon icon={IconComponent} size={18} className="shrink-0" />
+                  {iconPath ? (
+                    <NextImage src={iconPath} alt="" width={20} height={20} className="shrink-0" />
+                  ) : (
+                    <div className="size-5 shrink-0 rounded bg-zinc-300 dark:bg-zinc-700" />
+                  )}
                   <span className="truncate">{curriculum.title}</span>
                 </div>
                 <Badge color={getProgressColor(curriculum.progress)} className="ml-2 shrink-0">
