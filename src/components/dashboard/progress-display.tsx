@@ -11,10 +11,10 @@ interface ProgressDisplayProps {
 export function ProgressDisplay({ progress, label = 'AI 평가 기준 진행도', className }: ProgressDisplayProps) {
   return (
     <div className={clsx('flex flex-col items-center justify-center gap-[4px] p-[4px]', className)}>
-      <span className="self-start text-[18px] leading-[1.45] font-normal tracking-[-0.02em] text-[rgba(245,245,245,0.72)]">
+      <span className="self-start text-[18px] leading-[1.45] font-normal tracking-[-0.02em] text-[rgba(22,22,22,0.72)] dark:text-[rgba(245,245,245,0.72)]">
         {label}
       </span>
-      <span className="self-start text-[40px] leading-[1.2] font-semibold tracking-[-0.03em] text-[#F5F5F5]">
+      <span className="self-start text-[40px] leading-[1.2] font-semibold tracking-[-0.03em] text-[#161616] dark:text-[#F5F5F5]">
         {progress}%
       </span>
     </div>
@@ -28,8 +28,13 @@ interface ProgressBarProps {
 
 export function ProgressBar({ progress, className }: ProgressBarProps) {
   return (
-    <div className={clsx('h-[6px] w-full overflow-hidden rounded-full bg-[rgba(245,245,245,0.04)]', className)}>
-      <div className="h-full rounded-full bg-[#028AC7]" style={{ width: `${Math.min(100, Math.max(0, progress))}%` }} />
+    <div
+      className={clsx(
+        'h-[6px] w-full overflow-hidden rounded-full bg-[rgba(164,164,164,0.1)] dark:bg-[rgba(245,245,245,0.04)]',
+        className
+      )}
+    >
+      <div className="h-full rounded-full bg-[#0DABEA]" style={{ width: `${Math.min(100, Math.max(0, progress))}%` }} />
     </div>
   )
 }

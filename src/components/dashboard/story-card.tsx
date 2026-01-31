@@ -55,33 +55,33 @@ function NeurologyIcon() {
 function TaskStatusIcon({ status }: { status: Task['status'] }) {
   if (status === 'passed') {
     return (
-      <div className="flex size-[32px] shrink-0 items-center justify-center rounded-full bg-[#F5F5F5] text-[#161616]">
+      <div className="flex size-[32px] shrink-0 items-center justify-center rounded-full bg-[#161616] text-[#F5F5F5] dark:bg-[#F5F5F5] dark:text-[#161616]">
         <CheckIcon />
       </div>
     )
   }
   if (status === 'partial') {
     return (
-      <div className="flex size-[32px] shrink-0 items-center justify-center rounded-full bg-[#F5F5F5] text-[#161616]">
-        <div className="size-[8px] rounded-full bg-[#161616]" />
+      <div className="flex size-[32px] shrink-0 items-center justify-center rounded-full bg-[#161616] text-[#F5F5F5] dark:bg-[#F5F5F5] dark:text-[#161616]">
+        <div className="size-[8px] rounded-full bg-[#F5F5F5] dark:bg-[#161616]" />
       </div>
     )
   }
   return (
-    <div className="flex size-[32px] shrink-0 items-center justify-center rounded-full bg-[rgba(245,245,245,0.04)]" />
+    <div className="flex size-[32px] shrink-0 items-center justify-center rounded-full bg-[rgba(164,164,164,0.1)] dark:bg-[rgba(245,245,245,0.04)]" />
   )
 }
 
 function StoryStatusIcon({ completed, total }: { completed: number; total: number }) {
   if (completed === total && total > 0) {
     return (
-      <div className="flex size-[40px] shrink-0 items-center justify-center rounded-full bg-[#F5F5F5] text-[#161616]">
+      <div className="flex size-[40px] shrink-0 items-center justify-center rounded-full bg-[#161616] text-[#F5F5F5] dark:bg-[#F5F5F5] dark:text-[#161616]">
         <CheckIcon />
       </div>
     )
   }
   return (
-    <div className="flex size-[40px] shrink-0 items-center justify-center rounded-full bg-[#F5F5F5] text-[#161616]">
+    <div className="flex size-[40px] shrink-0 items-center justify-center rounded-full bg-[#161616] text-[#F5F5F5] dark:bg-[#F5F5F5] dark:text-[#161616]">
       <span className="text-[16px] font-semibold">{completed}</span>
     </div>
   )
@@ -110,10 +110,10 @@ export function StoryCard({ story, className }: StoryCardProps) {
         <div className="flex items-center gap-[8px] px-[12px] py-[10px]">
           <StoryStatusIcon completed={completedTasks} total={totalTasks} />
           <div className="flex flex-col justify-center gap-[2px] px-[4px]">
-            <span className="text-[16px] leading-[1.5] font-medium tracking-[-0.02em] text-[#F5F5F5]">
+            <span className="text-[16px] leading-[1.5] font-medium tracking-[-0.02em] text-[#161616] dark:text-[#F5F5F5]">
               {story.title}
             </span>
-            <span className="text-[14px] leading-[1.45] font-normal tracking-[-0.02em] text-[rgba(245,245,245,0.72)]">
+            <span className="text-[14px] leading-[1.45] font-normal tracking-[-0.02em] text-[rgba(22,22,22,0.72)] dark:text-[rgba(245,245,245,0.72)]">
               {story.description}
             </span>
           </div>
@@ -131,11 +131,11 @@ export function StoryCard({ story, className }: StoryCardProps) {
             <div className="flex flex-1 items-center gap-[6px] py-[8px]">
               <TaskStatusIcon status={task.status} />
               <div className="flex flex-col justify-center gap-[2px] px-[4px]">
-                <span className="text-[16px] leading-[1.5] font-medium tracking-[-0.02em] text-[#F5F5F5]">
+                <span className="text-[16px] leading-[1.5] font-medium tracking-[-0.02em] text-[#161616] dark:text-[#F5F5F5]">
                   {task.title}
                 </span>
                 {task.description && (
-                  <span className="text-[14px] leading-[1.45] font-normal tracking-[-0.02em] text-[rgba(245,245,245,0.72)]">
+                  <span className="text-[14px] leading-[1.45] font-normal tracking-[-0.02em] text-[rgba(22,22,22,0.72)] dark:text-[rgba(245,245,245,0.72)]">
                     {task.description}
                   </span>
                 )}
@@ -146,24 +146,24 @@ export function StoryCard({ story, className }: StoryCardProps) {
       </div>
 
       {story.aiFeedback && (
-        <div className="flex w-[380px] shrink-0 flex-col gap-[8px] self-stretch rounded-[10px] bg-[rgba(245,245,245,0.04)] p-[16px]">
+        <div className="flex w-[380px] shrink-0 flex-col gap-[8px] self-stretch rounded-[10px] bg-[rgba(164,164,164,0.1)] p-[16px] dark:bg-[rgba(245,245,245,0.04)]">
           <div className="flex items-center gap-[4px] p-[4px]">
-            <div className="text-[rgba(245,245,245,0.56)]">
+            <div className="text-[rgba(22,22,22,0.56)] dark:text-[rgba(245,245,245,0.56)]">
               <NeurologyIcon />
             </div>
-            <span className="flex-1 text-[12px] leading-[1.35] font-normal tracking-[-0.02em] text-[rgba(245,245,245,0.56)]">
+            <span className="flex-1 text-[12px] leading-[1.35] font-normal tracking-[-0.02em] text-[rgba(22,22,22,0.56)] dark:text-[rgba(245,245,245,0.56)]">
               AI 피드백 요약
             </span>
-            <span className="text-[12px] leading-[1.35] font-normal tracking-[-0.02em] text-[rgba(245,245,245,0.4)]">
+            <span className="text-[12px] leading-[1.35] font-normal tracking-[-0.02em] text-[rgba(22,22,22,0.4)] dark:text-[rgba(245,245,245,0.4)]">
               {story.aiFeedback.date}
             </span>
           </div>
 
           <div className="flex flex-col gap-[2px] p-[4px]">
-            <span className="text-[12px] leading-[1.35] font-normal tracking-[-0.02em] text-[rgba(245,245,245,0.72)]">
+            <span className="text-[12px] leading-[1.35] font-normal tracking-[-0.02em] text-[rgba(22,22,22,0.72)] dark:text-[rgba(245,245,245,0.72)]">
               Story 수행 요약
             </span>
-            <p className="text-[14px] leading-[1.45] font-medium tracking-[-0.02em] text-[#F5F5F5]">
+            <p className="text-[14px] leading-[1.45] font-medium tracking-[-0.02em] text-[#161616] dark:text-[#F5F5F5]">
               <MarkdownText>{story.aiFeedback.summary}</MarkdownText>
             </p>
           </div>
@@ -172,10 +172,10 @@ export function StoryCard({ story, className }: StoryCardProps) {
             <>
               {Object.entries(story.aiFeedback.taskFeedback).map(([taskTitle, feedback]) => (
                 <div key={taskTitle} className="flex flex-col gap-[2px] p-[4px]">
-                  <span className="text-[12px] leading-[1.35] font-normal tracking-[-0.02em] text-[rgba(245,245,245,0.56)]">
+                  <span className="text-[12px] leading-[1.35] font-normal tracking-[-0.02em] text-[rgba(22,22,22,0.56)] dark:text-[rgba(245,245,245,0.56)]">
                     {taskTitle}
                   </span>
-                  <span className="text-[14px] leading-[1.45] font-normal tracking-[-0.02em] text-[rgba(245,245,245,0.72)]">
+                  <span className="text-[14px] leading-[1.45] font-normal tracking-[-0.02em] text-[rgba(22,22,22,0.72)] dark:text-[rgba(245,245,245,0.72)]">
                     <MarkdownText>{feedback}</MarkdownText>
                   </span>
                 </div>

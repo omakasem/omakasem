@@ -23,6 +23,21 @@ function getActivityOpacity(count: number): number {
   return 1
 }
 
+function ActivityCell({ date, count, opacity }: { date: string; count: number; opacity: number }) {
+  return (
+    <div
+      className="size-[14px] rounded-[4px]"
+      style={
+        {
+          '--cell-opacity': opacity,
+          backgroundColor: 'rgba(var(--heatmap-cell-rgb), var(--cell-opacity))',
+        } as React.CSSProperties
+      }
+      title={`${date}: ${count}`}
+    />
+  )
+}
+
 export function ActivityHeatmap({ data = [], className }: ActivityHeatmapProps) {
   const rows = 7
   const cols = 22
@@ -52,17 +67,14 @@ export function ActivityHeatmap({ data = [], className }: ActivityHeatmapProps) 
   }
 
   return (
-    <div className={clsx('w-full mt-auto', className)}>
+    <div
+      className={clsx('mt-auto w-full [--heatmap-cell-rgb:22,22,22] dark:[--heatmap-cell-rgb:245,245,245]', className)}
+    >
       <div className="flex gap-[4px]">
         {columns.map((column, colIndex) => (
           <div key={colIndex} className="flex flex-col gap-[4px]">
             {column.map((cell) => (
-              <div
-                key={cell.date}
-                className="size-[14px] rounded-[4px]"
-                style={{ backgroundColor: `rgba(245, 245, 245, ${cell.opacity})` }}
-                title={`${cell.date}: ${cell.count}`}
-              />
+              <ActivityCell key={cell.date} date={cell.date} count={cell.count} opacity={cell.opacity} />
             ))}
           </div>
         ))}

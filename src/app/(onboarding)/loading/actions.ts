@@ -1,9 +1,9 @@
 'use server'
 
-import { auth } from '@clerk/nextjs/server'
-import { getSessionsCollection, getCurriculaCollection } from '@/lib/mongodb'
+import { getCurriculaCollection, getSessionsCollection } from '@/lib/mongodb'
 import { plannerClient } from '@/lib/planner-client'
-import type { CurriculumDocument, CoursePlan } from '@/types/planner'
+import type { CoursePlan } from '@/types/planner'
+import { auth } from '@clerk/nextjs/server'
 
 export type ReviewResult = {
   success?: boolean
@@ -47,10 +47,7 @@ export type SaveCurriculumResult = {
   error?: string
 }
 
-export async function saveCurriculumFromPlan(
-  sessionId: string,
-  plan: CoursePlan
-): Promise<SaveCurriculumResult> {
+export async function saveCurriculumFromPlan(sessionId: string, plan: CoursePlan): Promise<SaveCurriculumResult> {
   console.log('[saveCurriculumFromPlan] called with sessionId:', sessionId)
   console.log('[saveCurriculumFromPlan] plan:', JSON.stringify(plan, null, 2))
 
@@ -70,42 +67,49 @@ export async function saveCurriculumFromPlan(
       return { error: '세션을 찾을 수 없습니다' }
     }
 
-    // Calculate total task count from plan
-    const taskCount = plan.epics.reduce(
-      (sum, epic) =>
-        sum + epic.stories.reduce((s, story) => s + (story.taskCount || 0), 0),
+    const totalTasks = plan.epics.reduce(
+      (sum, epic) => sum + epic.stories.reduce((s, story) => s + (story.taskCount || 0), 0),
       0
     )
-    console.log('[saveCurriculumFromPlan] taskCount:', taskCount)
+    console.log('[saveCurriculumFromPlan] totalTasks:', totalTasks)
 
-    // Save curriculum to MongoDB
+    const totalHours = session.input.totalWeeks * session.input.weeklyHours
+
     const curricula = await getCurriculaCollection()
-    const curriculumId = `cur_${Date.now()}_${Math.random().toString(36).substring(7)}`
 
-    const doc: CurriculumDocument = {
-      curriculumId,
-      userId,
-      title: plan.title,
-      oneLiner: plan.oneLiner,
-      epics: plan.epics,
-      taskCount,
-      status: 'active',
-      githubUrl: session.input.githubUrl,
-      createdAt: new Date(),
+    const doc = {
+      session_id: sessionId,
+      course_title: plan.title,
+      one_liner: plan.oneLiner,
+      student_id: null,
+      clerk_user_id: userId,
+      status: 'active' as const,
+      total_hours: totalHours,
+      total_tasks: totalTasks,
+      completed_tasks: 0,
+      structure: {
+        epics: plan.epics.map((epic) => ({
+          title: epic.title,
+          description: epic.description,
+          stories: epic.stories.map((story) => ({
+            title: story.title,
+            description: story.description,
+          })),
+        })),
+      },
+      created_at: new Date(),
+      updated_at: new Date(),
     }
 
-    console.log('[saveCurriculumFromPlan] inserting doc with curriculumId:', curriculumId)
-    await curricula.insertOne(doc)
+    console.log('[saveCurriculumFromPlan] inserting doc')
+    const result = await curricula.insertOne(doc)
+    const curriculumId = result.insertedId.toString()
     console.log('[saveCurriculumFromPlan] MongoDB inserted successfully')
 
     // Save to Planner API (non-blocking - don't fail if this fails)
     if (session.plannerSessionId) {
       try {
-        await plannerClient.savePlan(
-          session.plannerSessionId,
-          plan,
-          session.input.githubUrl
-        )
+        await plannerClient.savePlan(session.plannerSessionId, plan, session.input.githubUrl)
         console.log('[saveCurriculumFromPlan] Planner API save success')
       } catch (apiError) {
         console.error('[saveCurriculumFromPlan] Planner API save failed (continuing):', apiError)
@@ -114,10 +118,7 @@ export async function saveCurriculumFromPlan(
     }
 
     // Update session status
-    await sessions.updateOne(
-      { sessionId },
-      { $set: { status: 'approved', updatedAt: new Date() } }
-    )
+    await sessions.updateOne({ sessionId }, { $set: { status: 'approved', updatedAt: new Date() } })
     console.log('[saveCurriculumFromPlan] session updated')
 
     return { success: true, curriculumId, planId: session.plannerSessionId }
@@ -128,10 +129,7 @@ export async function saveCurriculumFromPlan(
 }
 
 // Reject action - just updates local MongoDB status
-export async function submitReview(
-  sessionId: string,
-  action: 'reject'
-): Promise<ReviewResult> {
+export async function submitReview(sessionId: string, action: 'reject'): Promise<ReviewResult> {
   const { userId } = await auth()
   if (!userId) {
     return { error: '로그인이 필요합니다' }
@@ -146,10 +144,7 @@ export async function submitReview(
     }
 
     // Update session status to rejected
-    await sessions.updateOne(
-      { sessionId },
-      { $set: { status: 'rejected', updatedAt: new Date() } }
-    )
+    await sessions.updateOne({ sessionId }, { $set: { status: 'rejected', updatedAt: new Date() } })
     return { success: true }
   } catch (error) {
     console.error('Failed to submit review:', error)

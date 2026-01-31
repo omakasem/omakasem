@@ -62,14 +62,14 @@ export function EpicNavigation({ epics, selectedEpicId, onSelectEpic, className 
       <button
         onClick={handlePrevious}
         disabled={selectedIndex <= 0}
-        className="flex size-[48px] shrink-0 items-center justify-center gap-[6px] rounded-full bg-[rgba(245,245,245,0.04)] p-[14px] text-[rgba(245,245,245,0.72)] disabled:opacity-40"
+        className="flex size-[48px] shrink-0 items-center justify-center gap-[6px] rounded-full bg-[rgba(164,164,164,0.1)] p-[14px] text-[rgba(22,22,22,0.72)] disabled:opacity-40 dark:bg-[rgba(245,245,245,0.04)] dark:text-[rgba(245,245,245,0.72)]"
       >
         <ArrowLeftIcon />
       </button>
       <button
         onClick={handleNext}
         disabled={selectedIndex >= epics.length - 1}
-        className="flex size-[48px] shrink-0 items-center justify-center gap-[6px] rounded-full bg-[rgba(245,245,245,0.04)] p-[14px] text-[rgba(245,245,245,0.72)] disabled:opacity-40"
+        className="flex size-[48px] shrink-0 items-center justify-center gap-[6px] rounded-full bg-[rgba(164,164,164,0.1)] p-[14px] text-[rgba(22,22,22,0.72)] disabled:opacity-40 dark:bg-[rgba(245,245,245,0.04)] dark:text-[rgba(245,245,245,0.72)]"
       >
         <ArrowRightIcon />
       </button>
@@ -82,8 +82,8 @@ export function EpicNavigation({ epics, selectedEpicId, onSelectEpic, className 
             className={clsx(
               'flex flex-1 items-center justify-center gap-[6px] rounded-full px-[14px] py-[8px] text-center text-[16px] leading-[1.5] tracking-[-0.02em] whitespace-nowrap',
               epic.id === selectedEpicId
-                ? 'bg-[rgba(245,245,245,0.04)] font-medium text-[#F5F5F5]'
-                : 'font-normal text-[rgba(245,245,245,0.4)]'
+                ? 'bg-[rgba(164,164,164,0.1)] font-medium text-[#161616] dark:bg-[rgba(245,245,245,0.04)] dark:text-[#F5F5F5]'
+                : 'font-normal text-[rgba(22,22,22,0.4)] dark:text-[rgba(245,245,245,0.4)]'
             )}
           >
             {epic.title}
