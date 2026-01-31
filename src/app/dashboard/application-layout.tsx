@@ -144,7 +144,7 @@ export function ApplicationLayout({ curricula, children }: ApplicationLayoutProp
             <SidebarSection>
               <SidebarHeading>빌더 여정들</SidebarHeading>
               {curricula.map((curriculum) => {
-                const IconComponent = curriculumIcons[curriculum.icon || 'default'] || curriculumIcons.default
+const IconComponent = curriculumIcons[curriculum.icon || 'default'] || curriculumIcons.default
                 return (
                   <SidebarItem
                     key={curriculum.id}
