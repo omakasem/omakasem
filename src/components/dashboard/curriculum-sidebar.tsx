@@ -71,7 +71,7 @@ export function CurriculumSidebar({
 
       {/* New Journey Button */}
       <div className="px-4 py-2">
-        <Button outline className="w-full justify-center" onClick={onCreateNew}>
+        <Button href="/onboarding" outline className="w-full justify-center">
           <PlusIcon className="size-4" />새 빌더 여정
         </Button>
       </div>

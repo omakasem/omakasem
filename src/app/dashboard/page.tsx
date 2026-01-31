@@ -8,9 +8,11 @@ import {
   StoryList,
   type Epic,
   type Story,
+  type Task,
 } from '@/components/dashboard'
 import { Heading } from '@/components/heading'
-import { getActivityData, getCurricula, getCurriculumById } from '@/lib/curricula'
+import { getActivityData, getCurricula, getCurriculumById, getCurriculumTasks } from '@/lib/curricula'
+import type { TaskDocument } from '@/lib/types'
 import { SourceCodeIcon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import Link from 'next/link'
@@ -26,27 +28,42 @@ function transformToEpics(
   }))
 }
 
-function transformToStories(
+function transformTaskToUI(task: TaskDocument): Task {
+  return {
+    id: task._id.toString(),
+    title: task.title,
+    status: task.status,
+    grade: task.grade_result?.grade,
+    score: task.grade_result?.percentage,
+  }
+}
+
+function transformToStoriesWithTasks(
   structure: { epics: { title: string; description: string; stories: { title: string; description: string }[] }[] } | undefined,
-  epicIndex: number
+  epicIndex: number,
+  allTasks: TaskDocument[]
 ): Story[] {
   if (!structure?.epics) return []
   const epic = structure.epics[epicIndex]
   if (!epic) return []
 
-  return epic.stories.map((story, index) => ({
-    id: `${epicIndex + 1}-${index + 1}`,
-    title: story.title,
-    description: story.description,
-    tasks: [],
-  }))
+  return epic.stories.map((story, storyIndex) => {
+    const storyTasks = allTasks
+      .filter((t) => t.epic_index === epicIndex && t.story_index === storyIndex)
+      .map(transformTaskToUI)
+
+    return {
+      id: `${epicIndex + 1}-${storyIndex + 1}`,
+      title: story.title,
+      description: story.description,
+      tasks: storyTasks,
+    }
+  })
 }
 
 export default async function DashboardPage() {
-  // Server-side data fetching - no client round trips
   const [curricula, activityData] = await Promise.all([getCurricula(), getActivityData(154)])
 
-  // Get first curriculum details if exists
   const firstCurriculum = curricula.length > 0 ? await getCurriculumById(curricula[0].id) : null
 
   if (!firstCurriculum) {
@@ -63,8 +80,9 @@ export default async function DashboardPage() {
     )
   }
 
+  const tasks = await getCurriculumTasks(firstCurriculum.id)
   const epics = transformToEpics(firstCurriculum.structure)
-  const initialStories = transformToStories(firstCurriculum.structure, 0)
+  const initialStories = transformToStoriesWithTasks(firstCurriculum.structure, 0, tasks)
   const progress = firstCurriculum.progress
 
   return (
@@ -110,6 +128,7 @@ export default async function DashboardPage() {
           structure={firstCurriculum.structure}
           oneLiner={firstCurriculum.one_liner}
           initialStories={initialStories}
+          allTasks={tasks}
         />
       )}
     </>

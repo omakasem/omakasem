@@ -1,13 +1,13 @@
 'use client'
 
-import { Suspense, useState } from 'react'
-import { useSearchParams } from 'next/navigation'
-import { Heading } from '@/components/heading'
 import { Button } from '@/components/button'
-import { Input } from '@/components/input'
 import { FeedbackPanel } from '@/components/feedback'
+import { Heading } from '@/components/heading'
+import { Input } from '@/components/input'
+import { useSearchParams } from 'next/navigation'
+import { Suspense, useState } from 'react'
 
-function ReviewContent() {
+function ReviewTestContent() {
   const searchParams = useSearchParams()
   const initialRepo = searchParams.get('repo') || 'https://github.com/junhoyeo/threads-api'
 
@@ -40,9 +40,7 @@ function ReviewContent() {
               />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                Branch
-              </label>
+              <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Branch</label>
               <Input
                 type="text"
                 value={branch}
@@ -66,11 +64,10 @@ function ReviewContent() {
     </div>
   )
 }
-
 export default function ReviewTestPage() {
   return (
-    <Suspense fallback={<div className="flex h-64 items-center justify-center text-zinc-500">로딩 중...</div>}>
-      <ReviewContent />
+    <Suspense fallback={<ReviewTestFallback />}>
+      <ReviewTestContent />
     </Suspense>
   )
 }

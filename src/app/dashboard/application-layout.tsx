@@ -134,7 +134,7 @@ export function ApplicationLayout({ curricula, children }: ApplicationLayoutProp
 
             {/* New Journey Button */}
             <div className="mt-3">
-              <Button outline className="w-full justify-center">
+              <Button href="/onboarding" outline className="w-full justify-center">
                 <PlusIcon className="size-4" />새 빌더 여정
               </Button>
             </div>
