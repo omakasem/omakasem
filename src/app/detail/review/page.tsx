@@ -122,11 +122,7 @@ function ReviewContent() {
             다른 레포 테스트
           </Button>
         </div>
-        <FeedbackPanelV2
-          taskTitle={`Review: ${repoUrl}`}
-          suggestions={suggestions}
-          onClose={() => router.push('/dashboard')}
-        />
+        <FeedbackPanelV2 taskTitle={`Review: ${repoUrl}`} suggestions={suggestions} onClose={() => router.back()} />
       </div>
     )
   }

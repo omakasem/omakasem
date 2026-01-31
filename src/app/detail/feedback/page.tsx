@@ -65,7 +65,7 @@ export default function FeedbackPage() {
         taskTitle="Thread API 만들기"
         repoUrl="https://github.com/junhoyeo/threads-api"
         suggestions={mockSuggestions}
-        onClose={() => router.push('/dashboard')}
+        onClose={() => router.back()}
       />
     </div>
   )
