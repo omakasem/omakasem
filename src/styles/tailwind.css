@@ -1,5 +1,18 @@
 @import 'tailwindcss';
 
+@layer base {
+  button,
+  [role='button'],
+  [role='tab'],
+  a[href],
+  input[type='button'],
+  input[type='submit'],
+  input[type='reset'],
+  select {
+    cursor: pointer;
+  }
+}
+
 @theme {
   --font-sans: Inter, sans-serif;
   --font-sans--font-feature-settings: 'cv11';
