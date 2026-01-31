@@ -38,7 +38,7 @@ export function AIRatingBadge({ level, range, className }: AIRatingBadgeProps) {
   return (
     <div
       className={clsx(
-        'flex shrink-0 flex-col items-center justify-center gap-[16px] self-stretch rounded-[10px] bg-[rgba(245,245,245,0.04)] p-[32px]',
+        'flex shrink-0 flex-col items-center justify-center gap-[16px] self-stretch rounded-[10px] bg-[rgba(164,164,164,0.1)] p-[32px] dark:bg-[rgba(245,245,245,0.04)]',
         className
       )}
       style={{ width: 'auto' }}
