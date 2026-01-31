@@ -20,7 +20,20 @@ interface Token {
   value: string
 }
 
-const TOKEN_COLORS: Record<TokenType, string> = {
+// Light mode colors (One Light theme inspired)
+const TOKEN_COLORS_LIGHT: Record<TokenType, string> = {
+  keyword: '#A626A4',
+  string: '#986801',
+  comment: 'rgba(22, 22, 22, 0.4)',
+  function: '#4078F2',
+  property: '#0184BC',
+  number: '#986801',
+  operator: '#A626A4',
+  plain: '#383A42',
+}
+
+// Dark mode colors (One Dark theme inspired)
+const TOKEN_COLORS_DARK: Record<TokenType, string> = {
   keyword: '#E06C75',
   string: '#D19A66',
   comment: 'rgba(245, 245, 245, 0.4)',
@@ -138,13 +151,14 @@ function tokenizeLine(line: string): Token[] {
   return tokens
 }
 
-function HighlightedLine({ line }: { line: string }) {
+function HighlightedLine({ line, isDark }: { line: string; isDark: boolean }) {
   const tokens = useMemo(() => tokenizeLine(line), [line])
+  const colors = isDark ? TOKEN_COLORS_DARK : TOKEN_COLORS_LIGHT
 
   return (
     <>
       {tokens.map((token, i) => (
-        <span key={i} style={{ color: TOKEN_COLORS[token.type] }}>
+        <span key={i} style={{ color: colors[token.type] }}>
           {token.value}
         </span>
       ))}
@@ -152,10 +166,35 @@ function HighlightedLine({ line }: { line: string }) {
   )
 }
 
+function useIsDarkMode() {
+  const [isDark, setIsDark] = useState(false)
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+    setIsDark(mediaQuery.matches || document.documentElement.classList.contains('dark'))
+
+    const observer = new MutationObserver(() => {
+      setIsDark(document.documentElement.classList.contains('dark'))
+    })
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
+
+    const handler = (e: MediaQueryListEvent) => setIsDark(e.matches)
+    mediaQuery.addEventListener('change', handler)
+
+    return () => {
+      observer.disconnect()
+      mediaQuery.removeEventListener('change', handler)
+    }
+  }, [])
+
+  return isDark
+}
+
 export function CodeViewerV2({ repoUrl, file, highlightLine, branch = 'main', tooltip }: CodeViewerV2Props) {
   const [content, setContent] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const isDark = useIsDarkMode()
 
   useEffect(() => {
     if (!file) {
@@ -199,22 +238,25 @@ export function CodeViewerV2({ repoUrl, file, highlightLine, branch = 'main', to
   const lines = content?.split('\n') || []
 
   return (
-    <div
-      className="flex h-full flex-col self-stretch rounded-2xl"
-      style={{
-        background: 'rgba(255, 255, 255, 0.04)',
-        boxShadow: '0px 0px 24px 0px rgba(22, 22, 22, 0.06)',
-      }}
-    >
+    <div className="flex h-full flex-col self-stretch rounded-2xl bg-white shadow-[0px_0px_24px_0px_rgba(22,22,22,0.06)] dark:bg-[rgba(255,255,255,0.04)]">
       <div className="flex flex-row items-center gap-2 self-stretch p-5">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-          <path d="M8 6L4 12L8 18" stroke="#F5F5F5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-          <path d="M16 6L20 12L16 18" stroke="#F5F5F5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          <path
+            d="M8 6L4 12L8 18"
+            className="stroke-[#161616] dark:stroke-[#F5F5F5]"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <path
+            d="M16 6L20 12L16 18"
+            className="stroke-[#161616] dark:stroke-[#F5F5F5]"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
         </svg>
-        <span
-          className="flex-1 text-base leading-[1.5] font-medium"
-          style={{ color: '#F5F5F5', letterSpacing: '-0.02em' }}
-        >
+        <span className="flex-1 text-base leading-[1.5] font-medium tracking-[-0.02em] text-[#161616] dark:text-[#F5F5F5]">
           {file || '파일을 선택하세요'}
         </span>
       </div>
@@ -222,51 +264,32 @@ export function CodeViewerV2({ repoUrl, file, highlightLine, branch = 'main', to
       <div className="relative flex-1 overflow-auto px-5 pt-2 pb-5">
         {!file && (
           <div className="flex h-full items-center justify-center">
-            <p style={{ color: 'rgba(245, 245, 245, 0.56)' }}>피드백을 클릭하여 코드를 확인하세요</p>
+            <p className="text-[rgba(22,22,22,0.56)] dark:text-[rgba(245,245,245,0.56)]">
+              피드백을 클릭하여 코드를 확인하세요
+            </p>
           </div>
         )}
 
         {loading && (
           <div className="flex h-full items-center justify-center">
-            <p style={{ color: 'rgba(245, 245, 245, 0.56)' }}>로딩 중...</p>
+            <p className="text-[rgba(22,22,22,0.56)] dark:text-[rgba(245,245,245,0.56)]">로딩 중...</p>
           </div>
         )}
 
         {error && (
           <div className="flex h-full items-center justify-center">
-            <p style={{ color: '#E06C75' }}>{error}</p>
+            <p className="text-[#E06C75]">{error}</p>
           </div>
         )}
 
         {file && !loading && !error && content && (
           <div className="flex gap-4">
-            <div
-              className="shrink-0 text-right select-none"
-              style={{
-                fontFamily: 'JetBrains Mono, monospace',
-                fontSize: '14px',
-                fontWeight: 500,
-                lineHeight: '1.45',
-                letterSpacing: '-0.02em',
-                color: 'rgba(245, 245, 245, 0.56)',
-                width: '22px',
-              }}
-            >
+            <div className="w-[22px] shrink-0 text-right font-mono text-sm leading-[1.45] font-medium tracking-[-0.02em] text-[rgba(22,22,22,0.56)] select-none dark:text-[rgba(245,245,245,0.56)]">
               {lines.map((_, i) => (
                 <div key={i + 1}>{i + 1}</div>
               ))}
             </div>
-            <pre
-              className="flex-1 overflow-x-auto"
-              style={{
-                fontFamily: 'Roboto Mono, monospace',
-                fontSize: '14px',
-                fontWeight: 500,
-                lineHeight: '1.45',
-                letterSpacing: '-0.02em',
-                margin: 0,
-              }}
-            >
+            <pre className="m-0 flex-1 overflow-x-auto font-mono text-sm leading-[1.45] font-medium tracking-[-0.02em]">
               <code>
                 {lines.map((line, i) => {
                   const lineNum = i + 1
@@ -275,29 +298,12 @@ export function CodeViewerV2({ repoUrl, file, highlightLine, branch = 'main', to
                   return (
                     <div
                       key={lineNum}
-                      className="relative"
-                      style={{
-                        background: isHighlighted ? 'rgba(224, 108, 117, 0.15)' : undefined,
-                      }}
+                      className={`relative ${isHighlighted ? 'bg-[rgba(166,38,164,0.1)] dark:bg-[rgba(224,108,117,0.15)]' : ''}`}
                     >
-                      <HighlightedLine line={line || ' '} />
+                      <HighlightedLine line={line || ' '} isDark={isDark} />
                       {tooltip && tooltip.line === lineNum && (
-                        <div
-                          className="absolute top-full left-0 z-10 mt-1"
-                          style={{
-                            background: '#161616',
-                            border: '1px solid rgba(164, 164, 164, 0.72)',
-                            borderRadius: '1000px',
-                            padding: '12px 14px',
-                            boxShadow: '0px 0px 24px 0px rgba(22, 22, 22, 0.06)',
-                            backdropFilter: 'blur(16px)',
-                            maxWidth: '420px',
-                          }}
-                        >
-                          <span
-                            className="text-sm leading-[1.45] font-medium"
-                            style={{ color: '#F5F5F5', letterSpacing: '-0.02em' }}
-                          >
+                        <div className="absolute top-full left-0 z-10 mt-1 max-w-[420px] rounded-full border border-[rgba(164,164,164,0.72)] bg-white px-3.5 py-3 shadow-[0px_0px_24px_0px_rgba(22,22,22,0.06)] backdrop-blur-[16px] dark:bg-[#161616]">
+                          <span className="text-sm leading-[1.45] font-medium tracking-[-0.02em] text-[#161616] dark:text-[#F5F5F5]">
                             {tooltip.message}
                           </span>
                         </div>

@@ -1,8 +1,6 @@
-export { CodeViewer } from './code-viewer'
 export { CodeViewerV2 } from './code-viewer-v2'
 export { DiagnosticCard, SuggestionCard } from './feedback-card'
 export { FeedbackLayout } from './feedback-layout'
 export { FeedbackList } from './feedback-list'
-export { FeedbackPanel } from './feedback-panel'
 export { FeedbackPanelV2 } from './feedback-panel-v2'
 export type { Diagnostic, Priority, ReviewResult, Severity, Suggestion, SuggestionCategory } from './types'
