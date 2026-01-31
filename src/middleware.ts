@@ -6,6 +6,7 @@ const isPublicRoute = createRouteMatcher([
   '/forgot-password(.*)',
   '/api/webhooks(.*)',
   '/api/health',
+  '/api/curricula(.*)',
   '/test-epic-nav(.*)',
   '/dashboard(.*)',
 ])
