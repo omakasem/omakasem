@@ -1,6 +1,6 @@
 import { Db, MongoClient } from 'mongodb'
 
-const DB_NAME = 'omakasem'
+const DB_NAME = process.env.MONGODB_DATABASE || 'omakasem'
 
 interface MongoClientCache {
   client: MongoClient | null
@@ -26,9 +26,9 @@ export async function connectToDatabase(): Promise<{ client: MongoClient; db: Db
     return { client: cached.client, db: cached.client.db(DB_NAME) }
   }
 
-  const MONGODB_URI = process.env.MONGODB_URI
+  const MONGODB_URI = process.env.MONGODB_URI || process.env.MONGODB_URL
   if (!MONGODB_URI) {
-    throw new Error('Please define the MONGODB_URI environment variable')
+    throw new Error('Please define the MONGODB_URI or MONGODB_URL environment variable')
   }
 
   if (!cached.promise) {
@@ -51,4 +51,14 @@ export async function connectToDatabase(): Promise<{ client: MongoClient; db: Db
 export async function getDb(): Promise<Db> {
   const { db } = await connectToDatabase()
   return db
+}
+
+export async function getSessionsCollection() {
+  const db = await getDb()
+  return db.collection('sessions')
+}
+
+export async function getCurriculaCollection() {
+  const db = await getDb()
+  return db.collection('curricula')
 }
