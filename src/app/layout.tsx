@@ -9,6 +9,10 @@ export const metadata: Metadata = {
     default: '오마카쌤 | AI 맞춤형 개발자 교육 플랫폼',
   },
   description: 'AI가 설계하는 맞춤형 커리큘럼으로 실무 중심의 개발 역량을 키워보세요. GitHub 기반 과제 제출과 AI 코드 리뷰로 실력을 검증받으세요.',
+  icons: {
+    icon: '/light.svg',
+    apple: '/light.svg',
+  },
 }
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {

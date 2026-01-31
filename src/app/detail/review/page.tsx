@@ -1,7 +1,7 @@
 'use client'
 
 import { Button } from '@/components/button'
-import { FeedbackPanel } from '@/components/feedback'
+import { FeedbackPanelV2 } from '@/components/feedback'
 import { Heading } from '@/components/heading'
 import { Input } from '@/components/input'
 import { useSearchParams } from 'next/navigation'
@@ -59,7 +59,12 @@ function ReviewTestContent() {
           </div>
         )}
 
-        {submitted && <FeedbackPanel repoUrl={repoUrl} branch={branch} />}
+        {submitted && (
+          <FeedbackPanelV2
+            taskTitle={`Review: ${repoUrl}`}
+            suggestions={[]}
+          />
+        )}
       </div>
     </div>
   )
