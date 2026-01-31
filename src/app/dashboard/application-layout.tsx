@@ -39,6 +39,7 @@ import {
 import { QuestionMarkCircleIcon, SparklesIcon } from '@heroicons/react/20/solid'
 import { BookOpen01Icon, CodeIcon, GridIcon, SourceCodeIcon, SourceCodeSquareIcon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
+import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 
 const curriculumIcons: Record<string, typeof CodeIcon> = {
@@ -121,7 +122,8 @@ export function ApplicationLayout({ curricula, children }: ApplicationLayoutProp
           <SidebarHeader>
             {/* Logo */}
             <div className="flex items-center gap-2 px-2">
-              <HugeiconsIcon icon={CodeIcon} size={28} className="text-zinc-950 dark:text-white" />
+              <Image src="/light.svg" alt="" width={28} height={28} className="dark:hidden" />
+              <Image src="/dark.svg" alt="" width={28} height={28} className="hidden dark:block" />
             </div>
 
             {/* Search */}

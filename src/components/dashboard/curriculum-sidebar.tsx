@@ -8,6 +8,7 @@ import { ArrowRightStartOnRectangleIcon, MagnifyingGlassIcon, PlusIcon, XMarkIco
 import { BookOpen01Icon, CodeIcon, GridIcon, SourceCodeIcon, SourceCodeSquareIcon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import clsx from 'clsx'
+import Image from 'next/image'
 
 export interface Curriculum {
   id: string
@@ -56,7 +57,8 @@ export function CurriculumSidebar({
       {/* Logo */}
       <div className="p-4">
         <div className="flex items-center gap-2">
-          <HugeiconsIcon icon={CodeIcon} size={28} className="text-zinc-950 dark:text-white" />
+          <Image src="/light.svg" alt="" width={28} height={28} className="dark:hidden" />
+          <Image src="/dark.svg" alt="" width={28} height={28} className="hidden dark:block" />
         </div>
       </div>
 

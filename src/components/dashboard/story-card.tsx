@@ -63,11 +63,9 @@ export function StoryCard({ story, className }: StoryCardProps) {
   const totalTasks = story.tasks.length
 
   return (
-    <div className={clsx('flex rounded-xl bg-zinc-100 dark:bg-zinc-800/50 overflow-hidden', className)}>
-      {/* Left: Timeline & Content */}
-      <div className="relative flex-1 p-5">
-        {/* Vertical Timeline Line */}
-        <div className="absolute top-8 bottom-8 left-[29px] w-0.5 bg-zinc-200 dark:bg-zinc-700" />
+    <div className={clsx('flex overflow-hidden rounded-xl ring-1 ring-zinc-200 dark:ring-zinc-700/50', className)}>
+      <div className="relative flex-1 py-2">
+        <div className="absolute top-8 bottom-8 left-[11px] w-0.5 bg-zinc-200 dark:bg-zinc-700" />
 
         {/* Story Header Item */}
         <div className="relative flex items-start gap-4 mb-6">
@@ -89,13 +87,10 @@ export function StoryCard({ story, className }: StoryCardProps) {
           </div>
         </div>
 
-        {/* Task List */}
-        <div className="space-y-4">
+        <div className="space-y-3 pl-10">
           {story.tasks.map((task) => (
-            <div key={task.id} className="relative flex items-start gap-4">
-              <div className="ml-0.5 flex items-center justify-center">
-                <TaskStatusIcon status={task.status} />
-              </div>
+            <div key={task.id} className="relative flex items-start gap-3">
+              <TaskStatusIcon status={task.status} />
               <div className="min-w-0 flex-1 pt-0.5">
                 <div className="text-sm font-medium text-zinc-950 dark:text-white leading-tight">{task.title}</div>
                 {task.description && (
@@ -109,7 +104,7 @@ export function StoryCard({ story, className }: StoryCardProps) {
 
       {/* Right: AI Feedback Panel */}
       {story.aiFeedback && (
-        <div className="w-[40%] border-l border-zinc-200 bg-zinc-50 p-5 dark:border-zinc-700/50 dark:bg-zinc-800/30">
+        <div className="w-[40%] rounded-xl bg-zinc-100 p-5 dark:bg-zinc-800/50">
           <div className="flex items-center justify-between text-xs text-zinc-500">
             <span className="flex items-center gap-1.5 font-medium">
               <HugeiconsIcon icon={AiGenerativeIcon} size={16} /> 
