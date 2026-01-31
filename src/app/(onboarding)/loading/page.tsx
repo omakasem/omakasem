@@ -4,7 +4,7 @@ import { DraftPreview } from '@/components/draft-preview'
 import { EnrichmentStreaming } from '@/components/enrichment-streaming'
 import { ProgressSteps } from '@/components/progress-steps'
 import { StreamingContent } from '@/components/streaming-content'
-import type { CourseInput, CoursePlan } from '@/types/planner'
+import type { CourseInput, CoursePlan, EnrichedCoursePlan } from '@/types/planner'
 import { AlertCircle, CheckCircle, Flag, Loader2, XCircle } from 'lucide-react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Suspense, useCallback, useEffect, useState } from 'react'
@@ -20,7 +20,7 @@ function LoadingContent() {
   const [pageState, setPageState] = useState<PageState>('loading')
   const [input, setInput] = useState<CourseInput | null>(null)
   const [draft, setDraft] = useState<CoursePlan | null>(null)
-  const [enrichedPlan, setEnrichedPlan] = useState<CoursePlan | null>(null)
+  const [enrichedPlan, setEnrichedPlan] = useState<EnrichedCoursePlan | null>(null)
   const [plannerSessionId, setPlannerSessionId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -76,7 +76,7 @@ function LoadingContent() {
 
   const handleEnrichmentComplete = useCallback((plan: unknown) => {
     console.log('[handleEnrichmentComplete] received plan:', plan)
-    setEnrichedPlan(plan as CoursePlan)
+    setEnrichedPlan(plan as EnrichedCoursePlan)
     setPageState('enrichment_complete')
   }, [])
 
@@ -221,8 +221,8 @@ function LoadingContent() {
             <div className="flex items-center gap-3">
               <CheckCircle className="h-6 w-6 text-green-500" />
               <div>
-                <p className="font-medium text-green-800 dark:text-green-300">{enrichedPlan.title}</p>
-                <p className="text-sm text-green-600 dark:text-green-400">{enrichedPlan.oneLiner}</p>
+                <p className="font-medium text-green-800 dark:text-green-300">{enrichedPlan.course_title}</p>
+                <p className="text-sm text-green-600 dark:text-green-400">{enrichedPlan.one_liner}</p>
               </div>
             </div>
           </div>

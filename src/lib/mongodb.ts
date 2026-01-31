@@ -62,3 +62,8 @@ export async function getCurriculaCollection() {
   const db = await getDb()
   return db.collection('curricula')
 }
+
+export async function getTasksCollection() {
+  const db = await getDb()
+  return db.collection('tasks')
+}
