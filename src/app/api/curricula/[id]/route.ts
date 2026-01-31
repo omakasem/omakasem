@@ -4,6 +4,15 @@ import { NextRequest } from 'next/server'
 const PLANNER_URL = process.env.OMAKASEM_PLANNER_URL || 'https://planner.omakasem.com'
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY
 
+const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages'
+const ANTHROPIC_VERSION = '2023-06-01'
+const OAUTH_BETA_FEATURES = 'oauth-2025-04-20,interleaved-thinking-2025-05-14'
+const OAUTH_USER_AGENT = 'claude-cli/2.1.2 (external, cli)'
+
+function isOAuthToken(token: string): boolean {
+  return token.startsWith('sk-ant-oat')
+}
+
 interface Task {
   task_id: string
   curriculum_id: string
@@ -118,6 +127,7 @@ function generateFallbackSummary(tasks: Task[]): string {
 
 async function generateAIWeeklySummary(curriculum: Curriculum, tasks: Task[]): Promise<string> {
   if (!ANTHROPIC_API_KEY) {
+    console.log('No ANTHROPIC_API_KEY configured')
     return generateFallbackSummary(tasks)
   }
 
@@ -126,7 +136,7 @@ async function generateAIWeeklySummary(curriculum: Curriculum, tasks: Task[]): P
     return '이번 주에 완료된 과제가 없습니다. 새로운 과제에 도전해보세요!'
   }
 
-  const isOAuthToken = ANTHROPIC_API_KEY.startsWith('sk-ant-oat')
+  const useOAuth = isOAuthToken(ANTHROPIC_API_KEY)
 
   const taskSummaries = recentTasks.map((t) => ({
     title: t.title,
@@ -135,7 +145,7 @@ async function generateAIWeeklySummary(curriculum: Curriculum, tasks: Task[]): P
     grade: t.grade_result?.grade || 'N/A',
   }))
 
-  const prompt = `당신은 개발자 교육 플랫폼의 AI 멘토입니다. 학생의 이번 주 학습 진행 상황을 바탕으로 따뜻하고 격려하는 피드백을 작성해주세요.
+  const userPrompt = `당신은 개발자 교육 플랫폼의 AI 멘토입니다. 학생의 이번 주 학습 진행 상황을 바탕으로 따뜻하고 격려하는 피드백을 작성해주세요.
 
 코스: ${curriculum.course_title}
 코스 설명: ${curriculum.one_liner}
@@ -151,26 +161,38 @@ ${taskSummaries.map((t) => `- ${t.title}: ${t.status} (${t.score}점, ${t.grade}
 5. 다음 학습에 대한 동기부여 포함`
 
   try {
-    if (isOAuthToken) {
-      const response = await fetch('https://api.anthropic.com/v1/messages?beta=true', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'anthropic-version': '2023-06-01',
-          Authorization: `Bearer ${ANTHROPIC_API_KEY}`,
-          'anthropic-beta': 'oauth-2025-04-20',
-          'anthropic-product': 'claude-code',
-          'user-agent': 'claude-cli/2.1.2 (external, cli)',
+    if (useOAuth) {
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        'anthropic-version': ANTHROPIC_VERSION,
+        Authorization: `Bearer ${ANTHROPIC_API_KEY}`,
+        'anthropic-beta': OAUTH_BETA_FEATURES,
+        'anthropic-product': 'claude-code',
+        'user-agent': OAUTH_USER_AGENT,
+      }
+
+      const systemBlocks = [
+        {
+          type: 'text',
+          text: 'You are Claude Code, Anthropic\'s official CLI for Claude.',
+          cache_control: { type: 'ephemeral' },
         },
+      ]
+
+      const response = await fetch(`${ANTHROPIC_API_URL}?beta=true`, {
+        method: 'POST',
+        headers,
         body: JSON.stringify({
           model: 'claude-sonnet-4-20250514',
           max_tokens: 256,
-          messages: [{ role: 'user', content: prompt }],
+          system: systemBlocks,
+          messages: [{ role: 'user', content: userPrompt }],
         }),
       })
 
       if (!response.ok) {
-        console.error('Anthropic OAuth API error:', response.status)
+        const errorText = await response.text()
+        console.error('Anthropic OAuth API error:', response.status, errorText)
         return generateFallbackSummary(tasks)
       }
 
@@ -186,7 +208,7 @@ ${taskSummaries.map((t) => `- ${t.title}: ${t.status} (${t.score}점, ${t.grade}
     const message = await client.messages.create({
       model: 'claude-sonnet-4-20250514',
       max_tokens: 256,
-      messages: [{ role: 'user', content: prompt }],
+      messages: [{ role: 'user', content: userPrompt }],
     })
 
     const content = message.content[0]
