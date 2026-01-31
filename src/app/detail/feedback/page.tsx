@@ -123,7 +123,7 @@ function FeedbackPageContent() {
 
   if (pageState === 'loading') {
     return (
-      <div className="flex h-full w-full flex-col items-center justify-center gap-4">
+      <div className="flex h-full w-full flex-col items-center justify-center gap-4 mt-12">
         <Loader2 className="h-8 w-8 animate-spin text-zinc-500" />
         <p className="text-sm text-zinc-500">커리큘럼 로딩 중...</p>
       </div>
@@ -132,7 +132,7 @@ function FeedbackPageContent() {
 
   if (pageState === 'error') {
     return (
-      <div className="flex h-full w-full flex-col items-center justify-center gap-4">
+      <div className="flex h-full w-full flex-col items-center justify-center gap-4 mt-12">
         <div className="rounded-xl bg-red-50 p-4 text-sm text-red-600 dark:bg-red-900/20 dark:text-red-400">
           {error}
         </div>
@@ -145,7 +145,7 @@ function FeedbackPageContent() {
 
   if (pageState === 'no-repo') {
     return (
-      <div className="flex h-full w-full flex-col items-center justify-center gap-4">
+      <div className="flex h-full w-full flex-col items-center justify-center gap-4 mt-12">
         <p className="text-zinc-500">이 커리큘럼에는 연결된 저장소가 없습니다.</p>
         <button onClick={() => router.back()} className="text-sm text-zinc-500 underline hover:text-zinc-700">
           돌아가기
@@ -156,7 +156,7 @@ function FeedbackPageContent() {
 
   if (pageState === 'reviewing') {
     return (
-      <div className="flex h-full w-full flex-col items-center justify-center gap-4">
+      <div className="flex h-full w-full flex-col items-center justify-center gap-4 mt-12">
         <Loader2 className="h-8 w-8 animate-spin text-zinc-500" />
         <p className="text-sm text-zinc-500">{statusMessage}</p>
         <p className="text-xs text-zinc-400">{curriculum?.git_repo}</p>
