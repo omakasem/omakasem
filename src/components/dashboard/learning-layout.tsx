@@ -1,9 +1,9 @@
 'use client'
 
+import { NavbarItem } from '@/components/navbar'
 import * as Headless from '@headlessui/react'
 import { useState } from 'react'
 import { CurriculumSidebar, type Curriculum } from './curriculum-sidebar'
-import { NavbarItem } from '@/components/navbar'
 
 function OpenMenuIcon() {
   return (
@@ -21,15 +21,7 @@ function CloseMenuIcon() {
   )
 }
 
-function MobileSidebar({
-  open,
-  close,
-  children,
-}: {
-  open: boolean
-  close: () => void
-  children: React.ReactNode
-}) {
+function MobileSidebar({ open, close, children }: { open: boolean; close: () => void; children: React.ReactNode }) {
   return (
     <Headless.Dialog open={open} onClose={close} className="lg:hidden">
       <Headless.DialogBackdrop
@@ -41,12 +33,8 @@ function MobileSidebar({
         className="fixed inset-y-0 w-full max-w-80 transition duration-300 ease-in-out data-closed:-translate-x-full"
       >
         <div className="flex h-full flex-col">
-          <div className="absolute right-2 top-2">
-            <Headless.CloseButton
-              as={NavbarItem}
-              aria-label="Close navigation"
-              className="text-white"
-            >
+          <div className="absolute top-2 right-2">
+            <Headless.CloseButton as={NavbarItem} aria-label="Close navigation" className="text-white">
               <CloseMenuIcon />
             </Headless.CloseButton>
           </div>
@@ -94,7 +82,7 @@ export function LearningLayout({
   )
 
   return (
-    <div className="relative flex min-h-svh w-full bg-zinc-950">
+    <div className="relative flex min-h-svh w-full bg-zinc-50 dark:bg-zinc-950">
       {/* Sidebar on desktop */}
       <div className="fixed inset-y-0 left-0 w-72 max-lg:hidden">{sidebar}</div>
 
@@ -104,11 +92,11 @@ export function LearningLayout({
       </MobileSidebar>
 
       {/* Mobile header */}
-      <header className="fixed top-0 left-0 right-0 z-10 flex items-center bg-zinc-900 px-4 py-3 lg:hidden">
+      <header className="fixed top-0 right-0 left-0 z-10 flex items-center bg-white px-4 py-3 lg:hidden dark:bg-zinc-900">
         <NavbarItem
           onClick={() => setShowSidebar(true)}
           aria-label="Open navigation"
-          className="text-white"
+          className="text-zinc-950 dark:text-white"
         >
           <OpenMenuIcon />
         </NavbarItem>

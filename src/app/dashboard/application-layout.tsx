@@ -1,6 +1,8 @@
 'use client'
 
 import { Avatar } from '@/components/avatar'
+import { Badge } from '@/components/badge'
+import { Button } from '@/components/button'
 import {
   Dropdown,
   DropdownButton,
@@ -9,6 +11,7 @@ import {
   DropdownLabel,
   DropdownMenu,
 } from '@/components/dropdown'
+import { Input, InputGroup } from '@/components/input'
 import { Navbar, NavbarItem, NavbarSection, NavbarSpacer } from '@/components/navbar'
 import {
   Sidebar,
@@ -22,35 +25,37 @@ import {
   SidebarSpacer,
 } from '@/components/sidebar'
 import { SidebarLayout } from '@/components/sidebar-layout'
-import { getEvents } from '@/data'
+import type { CurriculumListItem } from '@/lib/types'
+import { useClerk, useUser } from '@clerk/nextjs'
 import {
   ArrowRightStartOnRectangleIcon,
-  ChevronDownIcon,
   ChevronUpIcon,
-  Cog8ToothIcon,
   LightBulbIcon,
+  MagnifyingGlassIcon,
   PlusIcon,
   ShieldCheckIcon,
   UserCircleIcon,
 } from '@heroicons/react/16/solid'
-import {
-  Cog6ToothIcon,
-  HomeIcon,
-  QuestionMarkCircleIcon,
-  SparklesIcon,
-  Square2StackIcon,
-  TicketIcon,
-} from '@heroicons/react/20/solid'
+import { QuestionMarkCircleIcon, SparklesIcon } from '@heroicons/react/20/solid'
+import { BookOpen01Icon, CodeIcon, GridIcon, SourceCodeIcon, SourceCodeSquareIcon } from '@hugeicons/core-free-icons'
+import { HugeiconsIcon } from '@hugeicons/react'
 import { usePathname } from 'next/navigation'
-import { useUser, useClerk } from '@clerk/nextjs'
 
-function AccountDropdownMenu({
-  anchor,
-  onSignOut,
-}: {
-  anchor: 'top start' | 'bottom end'
-  onSignOut: () => void
-}) {
+const curriculumIcons: Record<string, typeof CodeIcon> = {
+  python: SourceCodeIcon,
+  react: GridIcon,
+  nestjs: SourceCodeSquareIcon,
+  default: BookOpen01Icon,
+}
+
+function getProgressColor(progress: number): 'lime' | 'yellow' | 'cyan' | 'zinc' {
+  if (progress >= 70) return 'lime'
+  if (progress >= 40) return 'cyan'
+  if (progress >= 20) return 'yellow'
+  return 'zinc'
+}
+
+function AccountDropdownMenu({ anchor, onSignOut }: { anchor: 'top start' | 'bottom end'; onSignOut: () => void }) {
   return (
     <DropdownMenu className="min-w-64" anchor={anchor}>
       <DropdownItem href="#">
@@ -75,13 +80,12 @@ function AccountDropdownMenu({
   )
 }
 
-export function ApplicationLayout({
-  events,
-  children,
-}: {
-  events: Awaited<ReturnType<typeof getEvents>>
+interface ApplicationLayoutProps {
+  curricula: CurriculumListItem[]
   children: React.ReactNode
-}) {
+}
+
+export function ApplicationLayout({ curricula, children }: ApplicationLayoutProps) {
   let pathname = usePathname()
   const { user } = useUser()
   const { signOut } = useClerk()
@@ -90,9 +94,12 @@ export function ApplicationLayout({
     signOut({ redirectUrl: '/sign-in' })
   }
 
-  const userDisplayName = user?.firstName || user?.username || 'User'
+  const userDisplayName = user?.firstName || user?.username || '빌더'
   const userEmail = user?.primaryEmailAddress?.emailAddress || ''
   const userImageUrl = user?.imageUrl
+
+  // For now, first curriculum is selected
+  const selectedCurriculumId = '1'
 
   return (
     <SidebarLayout
@@ -112,62 +119,46 @@ export function ApplicationLayout({
       sidebar={
         <Sidebar>
           <SidebarHeader>
-            <Dropdown>
-              <DropdownButton as={SidebarItem}>
-                <Avatar src="/teams/catalyst.svg" />
-                <SidebarLabel>Catalyst</SidebarLabel>
-                <ChevronDownIcon />
-              </DropdownButton>
-              <DropdownMenu className="min-w-80 lg:min-w-64" anchor="bottom start">
-                <DropdownItem href="/settings">
-                  <Cog8ToothIcon />
-                  <DropdownLabel>Settings</DropdownLabel>
-                </DropdownItem>
-                <DropdownDivider />
-                <DropdownItem href="#">
-                  <Avatar slot="icon" src="/teams/catalyst.svg" />
-                  <DropdownLabel>Catalyst</DropdownLabel>
-                </DropdownItem>
-                <DropdownItem href="#">
-                  <Avatar slot="icon" initials="BE" className="bg-purple-500 text-white" />
-                  <DropdownLabel>Big Events</DropdownLabel>
-                </DropdownItem>
-                <DropdownDivider />
-                <DropdownItem href="#">
-                  <PlusIcon />
-                  <DropdownLabel>New team&hellip;</DropdownLabel>
-                </DropdownItem>
-              </DropdownMenu>
-            </Dropdown>
+            {/* Logo */}
+            <div className="flex items-center gap-2 px-2">
+              <HugeiconsIcon icon={CodeIcon} size={28} className="text-zinc-950 dark:text-white" />
+            </div>
+
+            {/* Search */}
+            <div className="mt-4">
+              <InputGroup>
+                <MagnifyingGlassIcon data-slot="icon" />
+                <Input type="search" placeholder="원하는 내용 검색" />
+              </InputGroup>
+            </div>
+
+            {/* New Journey Button */}
+            <div className="mt-3">
+              <Button href="/onboarding" outline className="w-full justify-center">
+                <PlusIcon className="size-4" />새 빌더 여정
+              </Button>
+            </div>
           </SidebarHeader>
 
           <SidebarBody>
             <SidebarSection>
-              <SidebarItem href="/" current={pathname === '/'}>
-                <HomeIcon />
-                <SidebarLabel>Home</SidebarLabel>
-              </SidebarItem>
-              <SidebarItem href="/events" current={pathname.startsWith('/events')}>
-                <Square2StackIcon />
-                <SidebarLabel>Events</SidebarLabel>
-              </SidebarItem>
-              <SidebarItem href="/orders" current={pathname.startsWith('/orders')}>
-                <TicketIcon />
-                <SidebarLabel>Orders</SidebarLabel>
-              </SidebarItem>
-              <SidebarItem href="/settings" current={pathname.startsWith('/settings')}>
-                <Cog6ToothIcon />
-                <SidebarLabel>Settings</SidebarLabel>
-              </SidebarItem>
-            </SidebarSection>
-
-            <SidebarSection className="max-lg:hidden">
-              <SidebarHeading>Upcoming Events</SidebarHeading>
-              {events.map((event) => (
-                <SidebarItem key={event.id} href={event.url}>
-                  {event.name}
-                </SidebarItem>
-              ))}
+              <SidebarHeading>빌더 여정들</SidebarHeading>
+              {curricula.map((curriculum) => {
+const IconComponent = curriculumIcons[curriculum.icon || 'default'] || curriculumIcons.default
+                return (
+                  <SidebarItem
+                    key={curriculum.id}
+                    href={`/dashboard/curriculum/${curriculum.id}`}
+                    current={selectedCurriculumId === curriculum.id}
+                  >
+                    <HugeiconsIcon icon={IconComponent} size={20} className="shrink-0" />
+                    <SidebarLabel>{curriculum.title}</SidebarLabel>
+                    <Badge color={getProgressColor(curriculum.progress)} className="ml-auto">
+                      {curriculum.progress}%
+                    </Badge>
+                  </SidebarItem>
+                )
+              })}
             </SidebarSection>
 
             <SidebarSpacer />

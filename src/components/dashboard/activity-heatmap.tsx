@@ -9,7 +9,6 @@ interface ActivityData {
 
 interface ActivityHeatmapProps {
   data?: ActivityData[]
-  weeks?: number
   className?: string
 }
 
@@ -22,20 +21,22 @@ function getActivityLevel(count: number): number {
 }
 
 function getActivityColor(level: number): string {
+  // Dual theme: light mode uses darker shades for more activity, dark mode uses lighter shades
   const colors = [
-    'bg-zinc-800', // 0 - no activity
-    'bg-zinc-600', // 1 - low
-    'bg-zinc-500', // 2 - medium-low
-    'bg-zinc-400', // 3 - medium-high
-    'bg-zinc-300', // 4 - high
+    'bg-zinc-200 dark:bg-zinc-700/40', // 0 - no activity
+    'bg-zinc-300 dark:bg-zinc-500/60', // 1 - low
+    'bg-zinc-400 dark:bg-zinc-400', // 2 - medium-low
+    'bg-zinc-500 dark:bg-zinc-300', // 3 - medium-high
+    'bg-zinc-600 dark:bg-zinc-200', // 4 - high
   ]
   return colors[level] || colors[0]
 }
 
-export function ActivityHeatmap({ data = [], weeks = 15, className }: ActivityHeatmapProps) {
-  // Generate a grid of cells for the heatmap
-  // 7 days per week × number of weeks
-  const totalCells = 7 * weeks
+export function ActivityHeatmap({ data = [], className }: ActivityHeatmapProps) {
+  // Fixed grid: 7 rows × 22 columns to match mockup
+  const rows = 7
+  const cols = 22
+  const totalCells = rows * cols
 
   // Create a map of date to count for quick lookup
   const activityMap = new Map(data.map((d) => [d.date, d.count]))
@@ -50,25 +51,29 @@ export function ActivityHeatmap({ data = [], weeks = 15, className }: ActivityHe
     return { date: dateStr, count, level: getActivityLevel(count) }
   })
 
-  // Group cells by week
-  const weekGroups: typeof cells[] = []
-  for (let i = 0; i < cells.length; i += 7) {
-    weekGroups.push(cells.slice(i, i + 7))
+  // Create grid by columns (each column = 7 days)
+  const columns: (typeof cells)[] = []
+  for (let col = 0; col < cols; col++) {
+    const column: typeof cells = []
+    for (let row = 0; row < rows; row++) {
+      const idx = col * rows + row
+      if (idx < cells.length) {
+        column.push(cells[idx])
+      }
+    }
+    columns.push(column)
   }
 
   return (
-    <div className={clsx('', className)}>
-      <div className="flex gap-0.5">
-        {weekGroups.map((week, weekIndex) => (
-          <div key={weekIndex} className="flex flex-col gap-0.5">
-            {week.map((cell) => (
+    <div className={clsx('w-full', className)}>
+      <div className="flex gap-1.5">
+        {columns.map((column, colIndex) => (
+          <div key={colIndex} className="flex flex-col gap-1.5">
+            {column.map((cell) => (
               <div
                 key={cell.date}
-                className={clsx(
-                  'size-3 rounded-sm transition-colors',
-                  getActivityColor(cell.level)
-                )}
-                title={`${cell.date}: ${cell.count} activities`}
+                className={clsx('size-3 rounded-[3px]', getActivityColor(cell.level))}
+                title={`${cell.date}: ${cell.count}`}
               />
             ))}
           </div>

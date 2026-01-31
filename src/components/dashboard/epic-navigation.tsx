@@ -1,7 +1,7 @@
 'use client'
 
-import clsx from 'clsx'
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/20/solid'
+import clsx from 'clsx'
 
 export interface Epic {
   id: string
@@ -15,12 +15,7 @@ interface EpicNavigationProps {
   className?: string
 }
 
-export function EpicNavigation({
-  epics,
-  selectedEpicId,
-  onSelectEpic,
-  className,
-}: EpicNavigationProps) {
+export function EpicNavigation({ epics, selectedEpicId, onSelectEpic, className }: EpicNavigationProps) {
   const selectedIndex = epics.findIndex((e) => e.id === selectedEpicId)
 
   const handlePrevious = () => {
@@ -40,14 +35,14 @@ export function EpicNavigation({
       <button
         onClick={handlePrevious}
         disabled={selectedIndex <= 0}
-        className="rounded-lg bg-zinc-800 p-2 text-zinc-400 transition-colors hover:bg-zinc-700 hover:text-white disabled:opacity-50 disabled:hover:bg-zinc-800 disabled:hover:text-zinc-400"
+        className="rounded-lg bg-zinc-200 p-2 text-zinc-600 transition-colors hover:bg-zinc-300 hover:text-zinc-950 disabled:opacity-50 disabled:hover:bg-zinc-200 disabled:hover:text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700 dark:hover:text-white dark:disabled:hover:bg-zinc-800 dark:disabled:hover:text-zinc-400"
       >
         <ChevronLeftIcon className="size-5" />
       </button>
       <button
         onClick={handleNext}
         disabled={selectedIndex >= epics.length - 1}
-        className="rounded-lg bg-zinc-800 p-2 text-zinc-400 transition-colors hover:bg-zinc-700 hover:text-white disabled:opacity-50 disabled:hover:bg-zinc-800 disabled:hover:text-zinc-400"
+        className="rounded-lg bg-zinc-200 p-2 text-zinc-600 transition-colors hover:bg-zinc-300 hover:text-zinc-950 disabled:opacity-50 disabled:hover:bg-zinc-200 disabled:hover:text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700 dark:hover:text-white dark:disabled:hover:bg-zinc-800 dark:disabled:hover:text-zinc-400"
       >
         <ChevronRightIcon className="size-5" />
       </button>
@@ -58,10 +53,10 @@ export function EpicNavigation({
             key={epic.id}
             onClick={() => onSelectEpic?.(epic.id)}
             className={clsx(
-              'whitespace-nowrap rounded-lg px-4 py-2 text-sm font-medium transition-colors',
+              'rounded-lg px-4 py-2 text-sm font-medium whitespace-nowrap transition-colors',
               epic.id === selectedEpicId
-                ? 'bg-zinc-700 text-white'
-                : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'
+                ? 'bg-zinc-300 text-zinc-950 dark:bg-zinc-700 dark:text-white'
+                : 'text-zinc-600 hover:bg-zinc-200 hover:text-zinc-950 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-white'
             )}
           >
             {epic.title}
