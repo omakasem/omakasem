@@ -35,8 +35,9 @@ import {
 } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import clsx from 'clsx'
-
+import Image from 'next/image'
 import Link from 'next/link'
+import { useMemo, useState } from 'react'
 
 const curriculumIcons: Record<string, typeof CodeIcon> = {
   python: SourceCodeIcon,
@@ -98,6 +99,7 @@ interface ApplicationLayoutProps {
 export function ApplicationLayout({ curricula, children }: ApplicationLayoutProps) {
   const { user } = useUser()
   const { signOut } = useClerk()
+  const [searchQuery, setSearchQuery] = useState('')
 
   const handleSignOut = () => {
     signOut({ redirectUrl: '/sign-in' })
@@ -106,6 +108,14 @@ export function ApplicationLayout({ curricula, children }: ApplicationLayoutProp
   const userDisplayName = `${user?.firstName || user?.username || '빌더'} 빌더`
   const userEmail = user?.primaryEmailAddress?.emailAddress || ''
   const userImageUrl = user?.imageUrl
+
+  const allCurricula = useMemo(() => [...curricula, ...mockupCurricula], [curricula])
+
+  const filteredCurricula = useMemo(() => {
+    if (!searchQuery.trim()) return allCurricula
+    const query = searchQuery.toLowerCase()
+    return allCurricula.filter((c) => c.title.toLowerCase().includes(query))
+  }, [allCurricula, searchQuery])
 
   return (
     <SidebarLayout
@@ -126,9 +136,8 @@ export function ApplicationLayout({ curricula, children }: ApplicationLayoutProp
         <Sidebar className="!border-0 !bg-transparent">
           <SidebarHeader className="!border-0 !p-0">
             <div className="p-4">
-              <div className="flex size-8 items-center justify-center">
-                <HugeiconsIcon icon={CodeIcon} size={28} className="text-zinc-950 dark:text-white" />
-              </div>
+              <Image src="/light.svg" alt="Omakasem" width={36} height={36} className="dark:hidden" />
+              <Image src="/dark.svg" alt="Omakasem" width={36} height={36} className="hidden dark:block" />
             </div>
 
             <div className="px-4">
@@ -137,9 +146,15 @@ export function ApplicationLayout({ curricula, children }: ApplicationLayoutProp
                 <input
                   type="text"
                   placeholder="원하는 내용 검색"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
                   className="flex-1 bg-transparent text-sm text-zinc-500 placeholder-zinc-500 outline-none dark:text-zinc-400"
                 />
-                <XMarkIcon className="size-4 cursor-pointer text-zinc-400 hover:text-zinc-300" />
+                {searchQuery && (
+                  <button type="button" onClick={() => setSearchQuery('')} className="focus:outline-none">
+                    <XMarkIcon className="size-4 cursor-pointer text-zinc-400 hover:text-zinc-300" />
+                  </button>
+                )}
               </div>
             </div>
 
@@ -155,38 +170,44 @@ export function ApplicationLayout({ curricula, children }: ApplicationLayoutProp
 
           <SidebarBody className="!p-0">
             <div className="flex-1 overflow-y-auto px-4 py-4">
-              <h3 className="mb-2 px-1 text-xs text-zinc-400/60 dark:text-zinc-500/60">빌더 여정들</h3>
+              <h3 className="mb-2 px-1 text-xs text-zinc-400/60 dark:text-zinc-500/60">
+                빌더 여정들{searchQuery && ` (${filteredCurricula.length})`}
+              </h3>
               <div className="space-y-1">
-                {[...curricula, ...mockupCurricula].map((curriculum, index) => {
-                  const IconComponent = curriculumIcons[curriculum.icon || 'default'] || curriculumIcons.default
-                  const isSelected = index === 0
-                  const badgeStyle = getProgressBadgeStyle(curriculum.progress)
+                {filteredCurricula.length === 0 ? (
+                  <div className="px-3 py-4 text-center text-sm text-zinc-500">검색 결과가 없습니다</div>
+                ) : (
+                  filteredCurricula.map((curriculum, index) => {
+                    const IconComponent = curriculumIcons[curriculum.icon || 'default'] || curriculumIcons.default
+                    const isSelected = index === 0 && !searchQuery
+                    const badgeStyle = getProgressBadgeStyle(curriculum.progress)
 
-                  return (
-                    <Link
-                      key={curriculum.id}
-                      href={`/dashboard?curriculum=${curriculum.id}`}
-                      className={clsx(
-                        'flex w-full items-center gap-2 rounded-full px-3 py-3 text-sm transition-colors',
-                        isSelected
-                          ? 'bg-white/[0.04] font-medium text-zinc-100 shadow-[0_0_24px_0_rgba(22,22,22,0.06)]'
-                          : 'text-zinc-100/70 hover:bg-white/[0.02]'
-                      )}
-                    >
-                      <HugeiconsIcon icon={IconComponent} size={20} className="shrink-0 opacity-70" />
-                      <span className="min-w-0 flex-1 truncate">{curriculum.title}</span>
-                      <span
+                    return (
+                      <Link
+                        key={curriculum.id}
+                        href={`/dashboard?curriculum=${curriculum.id}`}
                         className={clsx(
-                          'shrink-0 rounded-full px-1.5 py-0.5 text-[11px]',
-                          badgeStyle.bg,
-                          badgeStyle.text
+                          'flex w-full items-center gap-2 rounded-full px-3 py-3 text-sm transition-colors',
+                          isSelected
+                            ? 'bg-white/[0.04] font-medium text-zinc-100 shadow-[0_0_24px_0_rgba(22,22,22,0.06)]'
+                            : 'text-zinc-100/70 hover:bg-white/[0.02]'
                         )}
                       >
-                        {curriculum.progress}%
-                      </span>
-                    </Link>
-                  )
-                })}
+                        <HugeiconsIcon icon={IconComponent} size={20} className="shrink-0 opacity-70" />
+                        <span className="min-w-0 flex-1 truncate">{curriculum.title}</span>
+                        <span
+                          className={clsx(
+                            'shrink-0 rounded-full px-1.5 py-0.5 text-[11px]',
+                            badgeStyle.bg,
+                            badgeStyle.text
+                          )}
+                        >
+                          {curriculum.progress}%
+                        </span>
+                      </Link>
+                    )
+                  })
+                )}
               </div>
             </div>
           </SidebarBody>
