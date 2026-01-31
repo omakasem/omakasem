@@ -289,7 +289,7 @@ export function CodeViewerV2({ repoUrl, file, highlightLine, branch = 'main', to
                 <div key={i + 1}>{i + 1}</div>
               ))}
             </div>
-            <pre className="m-0 flex-1 overflow-x-auto font-mono text-sm leading-[1.45] font-medium tracking-[-0.02em]">
+            <pre className="m-0 flex-1 font-mono text-sm leading-[1.45] font-medium tracking-[-0.02em] break-all whitespace-pre-wrap">
               <code>
                 {lines.map((line, i) => {
                   const lineNum = i + 1
