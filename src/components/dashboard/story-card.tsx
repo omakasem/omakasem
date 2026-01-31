@@ -2,6 +2,8 @@
 
 import clsx from 'clsx'
 
+import { MarkdownText } from '@/components/markdown-text'
+
 export interface Task {
   id: string
   title: string
@@ -162,7 +164,7 @@ export function StoryCard({ story, className }: StoryCardProps) {
               Story 수행 요약
             </span>
             <p className="text-[14px] leading-[1.45] font-medium tracking-[-0.02em] text-[#F5F5F5]">
-              {story.aiFeedback.summary}
+              <MarkdownText>{story.aiFeedback.summary}</MarkdownText>
             </p>
           </div>
 
@@ -174,7 +176,7 @@ export function StoryCard({ story, className }: StoryCardProps) {
                     {taskTitle}
                   </span>
                   <span className="text-[14px] leading-[1.45] font-normal tracking-[-0.02em] text-[rgba(245,245,245,0.72)]">
-                    {feedback}
+                    <MarkdownText>{feedback}</MarkdownText>
                   </span>
                 </div>
               ))}

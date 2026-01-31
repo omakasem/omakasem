@@ -1,14 +1,68 @@
-import { ActivityHeatmap, AIRatingBadge, ProgressBar, type Epic, type Story, type Task } from '@/components/dashboard'
-import { getActivityData, getCurricula, getCurriculumById, getCurriculumTasks } from '@/lib/curricula'
-import type { TaskDocument } from '@/lib/types'
+import { ActivityHeatmap, AIRatingBadge, ProgressBar, type Epic } from '@/components/dashboard'
+import { getActivityData, getCurricula } from '@/lib/curricula'
 import Link from 'next/link'
 import { DashboardClient } from './dashboard-client'
 
-function transformToEpics(
-  structure:
-    | { epics: { title: string; description: string; stories: { title: string; description: string }[] }[] }
-    | undefined
-): Epic[] {
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
+
+interface Task {
+  task_id: string
+  curriculum_id: string
+  epic_index: number
+  story_index: number
+  epic_title: string
+  story_title: string
+  title: string
+  description: string
+  status: 'pending' | 'partial' | 'passed' | 'failed'
+  grade_result: {
+    grade: string
+    percentage: number
+    graded_at: string
+  } | null
+}
+
+interface CurriculumResponse {
+  curriculum_id: string
+  course_title: string
+  one_liner: string
+  status: string
+  total_hours: number
+  total_tasks: number
+  completed_tasks: number
+  structure: {
+    epics: {
+      title: string
+      description: string
+      stories: { title: string; description: string }[]
+    }[]
+  }
+  tasks: Task[]
+  progress: number
+  weekly_summary: string
+}
+
+async function fetchCurriculumFromAPI(id: string): Promise<CurriculumResponse | null> {
+  try {
+    const response = await fetch(`${BASE_URL}/api/curricula/${id}`, {
+      headers: { 'Content-Type': 'application/json' },
+      cache: 'no-store',
+    })
+
+    if (!response.ok) {
+      console.error('Failed to fetch curriculum:', response.status)
+      return null
+    }
+
+    const curriculum: CurriculumResponse = await response.json()
+    return curriculum
+  } catch (error) {
+    console.error('Error fetching curriculum from API:', error)
+    return null
+  }
+}
+
+function transformToEpics(structure: CurriculumResponse['structure'] | undefined): Epic[] {
   if (!structure?.epics) return []
   return structure.epics.map((epic, index) => ({
     id: String(index + 1),
@@ -16,19 +70,9 @@ function transformToEpics(
   }))
 }
 
-function transformTaskToUI(task: TaskDocument): Task {
+function serializeTaskForClient(task: Task) {
   return {
-    id: task._id.toString(),
-    title: task.title,
-    status: task.status,
-    grade: task.grade_result?.grade,
-    score: task.grade_result?.percentage,
-  }
-}
-
-function serializeTaskForClient(task: TaskDocument) {
-  return {
-    _id: task._id.toString(),
+    _id: task.task_id,
     title: task.title,
     status: task.status,
     epic_index: task.epic_index,
@@ -43,29 +87,21 @@ function serializeTaskForClient(task: TaskDocument) {
   }
 }
 
-function transformToStoriesWithTasks(
-  structure:
-    | { epics: { title: string; description: string; stories: { title: string; description: string }[] }[] }
-    | undefined,
-  epicIndex: number,
-  allTasks: TaskDocument[]
-): Story[] {
-  if (!structure?.epics) return []
-  const epic = structure.epics[epicIndex]
-  if (!epic) return []
+function getRatingLevel(progress: number): 'beginner' | 'middle' | 'advanced' {
+  if (progress >= 66) return 'advanced'
+  if (progress >= 33) return 'middle'
+  return 'beginner'
+}
 
-  return epic.stories.map((story, storyIndex) => {
-    const storyTasks = allTasks
-      .filter((t) => t.epic_index === epicIndex && t.story_index === storyIndex)
-      .map(transformTaskToUI)
-
-    return {
-      id: `${epicIndex + 1}-${storyIndex + 1}`,
-      title: story.title,
-      description: story.description,
-      tasks: storyTasks,
-    }
-  })
+function getRatingRange(level: 'beginner' | 'middle' | 'advanced'): string {
+  switch (level) {
+    case 'beginner':
+      return '0% ~ 33%'
+    case 'middle':
+      return '33% ~ 66%'
+    case 'advanced':
+      return '66% ~ 100%'
+  }
 }
 
 function SourceCodeIcon() {
@@ -105,7 +141,7 @@ export default async function DashboardPage({ searchParams }: PageProps) {
   const [curricula, activityData] = await Promise.all([getCurricula(), getActivityData(154)])
 
   const targetCurriculumId = curriculumId || (curricula.length > 0 ? curricula[0].id : null)
-  const curriculum = targetCurriculumId ? await getCurriculumById(targetCurriculumId) : null
+  const curriculum = targetCurriculumId ? await fetchCurriculumFromAPI(targetCurriculumId) : null
 
   if (!curriculum) {
     return (
@@ -121,12 +157,11 @@ export default async function DashboardPage({ searchParams }: PageProps) {
     )
   }
 
-  const tasks = await getCurriculumTasks(curriculum.id)
   const epics = transformToEpics(curriculum.structure)
-  const initialStories = transformToStoriesWithTasks(curriculum.structure, 0, tasks)
   const progress = curriculum.progress
-  const aiFeedback =
-    'Python과 웹 개발 기초를 적절히 익혀, 원활히 FastAPI 환경을 설정했습니다. 하지만, 일부 함수에 대한 이해도가 미흡해 복습이 필요합니다.'
+  const level = getRatingLevel(progress)
+  const range = getRatingRange(level)
+  const weeklySummary = curriculum.weekly_summary
 
   return (
     <div className="rounded-[16px] bg-[rgba(255,255,255,0.04)] shadow-[0_0_24px_0_rgba(22,22,22,0.06)]">
@@ -135,7 +170,7 @@ export default async function DashboardPage({ searchParams }: PageProps) {
           <SourceCodeIcon />
         </div>
         <span className="text-[16px] leading-[1.5] font-medium tracking-[-0.02em] text-[#F5F5F5]">
-          {curriculum.title}
+          {curriculum.course_title}
         </span>
       </div>
 
@@ -162,7 +197,7 @@ export default async function DashboardPage({ searchParams }: PageProps) {
 
           <div className="flex flex-col gap-[4px] rounded-[14px] border border-[rgba(164,164,164,0.2)] p-[4px]">
             <div className="flex items-center gap-[4px]">
-              <AIRatingBadge level="middle" range="32% ~ 64%" />
+              <AIRatingBadge level={level} range={range} />
               <div className="flex flex-1 flex-col gap-[16px] self-stretch rounded-[10px] bg-[rgba(245,245,245,0.04)] p-[16px]">
                 <ProgressBar progress={progress} />
                 <ActivityHeatmap data={activityData} />
@@ -173,7 +208,7 @@ export default async function DashboardPage({ searchParams }: PageProps) {
               <span className="text-[14px] leading-[1.45] font-normal tracking-[-0.02em] text-[rgba(245,245,245,0.72)]">
                 AI 이번주 평가
               </span>
-              <p className="text-[16px] leading-[1.5] font-medium tracking-[-0.02em] text-[#F5F5F5]">{aiFeedback}</p>
+              <p className="text-[16px] leading-[1.5] font-medium tracking-[-0.02em] text-[#F5F5F5]">{weeklySummary}</p>
             </div>
           </div>
         </div>
@@ -183,7 +218,7 @@ export default async function DashboardPage({ searchParams }: PageProps) {
             epics={epics}
             structure={curriculum.structure}
             oneLiner={curriculum.one_liner}
-            allTasks={tasks.map(serializeTaskForClient)}
+            allTasks={curriculum.tasks.map(serializeTaskForClient)}
           />
         )}
       </div>

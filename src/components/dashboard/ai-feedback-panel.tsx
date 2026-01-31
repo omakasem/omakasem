@@ -4,6 +4,8 @@ import { AiGenerativeIcon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import clsx from 'clsx'
 
+import { MarkdownText } from '@/components/markdown-text'
+
 interface AIFeedbackPanelProps {
   weekLabel?: string
   feedback: string
@@ -14,7 +16,9 @@ export function AIFeedbackPanel({ weekLabel = 'AI 이번주 평가', feedback, c
   return (
     <div className={clsx('', className)}>
       <div className="text-xs font-medium text-zinc-500 dark:text-zinc-400">{weekLabel}</div>
-      <div className="mt-1 text-sm font-medium text-zinc-950 dark:text-white">{feedback}</div>
+      <div className="mt-1 text-sm font-medium text-zinc-950 dark:text-white">
+        <MarkdownText>{feedback}</MarkdownText>
+      </div>
     </div>
   )
 }
@@ -42,7 +46,9 @@ export function AIWeeklySummary({ summary, date, details, className }: AIWeeklyS
 
       <div className="mt-3">
         <div className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Story 수행 요약</div>
-        <p className="mt-1 text-sm text-zinc-700 dark:text-zinc-300">{summary}</p>
+        <p className="mt-1 text-sm text-zinc-700 dark:text-zinc-300">
+          <MarkdownText>{summary}</MarkdownText>
+        </p>
       </div>
 
       {details && details.length > 0 && (
