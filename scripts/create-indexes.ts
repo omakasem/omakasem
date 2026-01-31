@@ -23,7 +23,7 @@ interface IndexDef {
 
 async function createIndexSafe(collection: Collection, index: IndexDef): Promise<boolean> {
   try {
-    const options: CreateIndexesOptions = { name: index.name, background: true }
+    const options: CreateIndexesOptions = { name: index.name }
     if (index.sparse) options.sparse = true
     if (index.unique) options.unique = true
 

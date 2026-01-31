@@ -17,6 +17,7 @@ export async function GET() {
             total_tasks: 1,
             completed_tasks: 1,
             status: 1,
+            updated_at: 1,
           },
         }
       )
